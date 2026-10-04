@@ -74,3 +74,29 @@ Use isolated port 3100 with no server reuse; verify built production separately.
 Move the visible Next developer indicator to top-right and reserve mobile header
 space, because its default bottom-left position blocks Home navigation. Errors and
 warnings remain visible; checks are not bypassed.
+
+## 2026-10-04 — Verified Hevy CSV import
+
+Use the supplied ignored local reference only for schema/aggregate verification.
+Synthetic tests reproduce its column format without copying personal data. No source
+file, filename, raw preview or personal rows are checked in or logged. No new library
+is needed for this small strictly validated CSV grammar. Parser contracts remain
+replaceable; source errors block the whole batch, rather than silently skipping rows.
+
+Italian wall times require user-reviewed IANA timezone (default Europe/Rome), with
+DST ambiguity/gaps rejected. Group exact source timestamps/title/description, preserve
+historical title separately from null routine identity, retain source set ordering
+and source context. Repeated indices split blocks with a warning. Zero/missing load
+and timed/distance rows remain valid. Imported RIR is unknown; neither RPE 10 nor
+load/reps implies failure. Imported sets have unknown loggedAt, not invented times.
+
+Persist exact confirmed name mappings and SHA-256 fingerprints independent of
+canonical exercise selection. Exact duplicates skip automatically; timestamp matches
+or conflicting incoming groups require review. Changed exports are never auto-updated.
+All identities must resolve before confirmation. Unassigned muscle metadata is honest
+and allowed with warnings. Source snapshots remain immutable after library edits.
+
+One validated localStorage replacement commits workouts/library/mappings/batch summary.
+Require explicit approval and unchanged preview state; stale raw storage also blocks
+writes. Additive v2 schemaRevision 1 defaults preserve previous v2/V1 compatibility
+and full JSON export format 1. No backend, real AI or physiological calculations.

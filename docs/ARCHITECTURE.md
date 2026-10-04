@@ -54,8 +54,8 @@ handle forms, navigation and disclosure, not persistence or analytical calculati
 
 `gym-export.ts` validates the full backup envelope and produces escaped CSV.
 `integrations/hevy-import.ts` separates verified parsing, mapping, duplicate review
-and explicit confirmation. No verified parser/committer is supplied. Local import is
-therefore unavailable and cannot silently create workouts.
+and explicit confirmation. The verified local parser and atomic batch committer
+are implemented; preview cannot silently create workouts.
 
 Migration is deterministic and read-only until the first user save; the old key is
 preserved. Unknown origin is isolated from real queries until review. Routine edits
@@ -67,3 +67,26 @@ Both SQL migrations remain unapplied and require database testing.
 Browser tests use port 3100 with no server reuse, preventing stale previews from
 passing tests. The development indicator stays visible in the top-right with mobile
 header space reserved so it does not cover bottom navigation. No errors are suppressed.
+
+## Hevy parser and import transaction
+
+integrations/hevy-import.ts implements the parser abstraction, Italian wall-time
+conversion, SHA-256 source identities, exact-name confirmed mapping rules, duplicate
+classification and pure canonical batch planning. hevy-import-controls.tsx orchestrates
+in-memory preview with ten names per page; no row-by-row mapping or thousands of raw
+row elements. History is paginated at 20 sessions with sets rendered on expansion;
+exercise exposures progressively disclose 20 at a time. No new dependencies.
+
+The canonical plan validates the entire next store before confirmation. commitHevyPlan
+requires explicit approval and an unchanged base store, then invokes the repository
+writer once. Browser localStorage.setItem replaces the entire serialized value
+atomically, including quota-failure semantics. The provider checks current raw storage
+before writing to reject a stale tab/view. This is not general concurrent-tab locking.
+No raw CSV, filename or preview is persisted; normalized source values required for
+history/provenance are persisted only after confirmation. An opt-in local reference
+verification builds plans in memory and prints aggregate metadata, never source rows.
+
+v2/schemaRevision 1 is an additive extension with defaults for older stores. No old
+key is deleted or rewritten. JSON formatVersion 1 retains the full validated extended
+store. Future SQL adapters must preserve nullable reps/timing, source order/context,
+fingerprints, mappings and batches; existing SQL migrations are still unapplied.

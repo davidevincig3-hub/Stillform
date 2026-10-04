@@ -1094,3 +1094,26 @@ textarea {
     font-size: 14px;
   }
 }
+
+.hevy-import {
+  margin-top: 1.5rem;
+  min-width: 0;
+}
+.hevy-import input:not([type='checkbox']),
+.hevy-import select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.hevy-import label {
+  display: block;
+  margin-top: 0.6rem;
+}
+.hevy-import .row label,
+.hevy-import label.row {
+  display: flex;
+}
+.import-name,
+.hevy-import p {
+  overflow-wrap: anywhere;
+}

@@ -4,6 +4,7 @@ import type {
   RecoveryNight,
   Source,
 } from '../domain/models';
+import { previewHevyImport } from './hevy-import';
 export interface SourceNormalizer {
   normalize(record: RawRecord): Promise<{
     activity?: Activity;
@@ -59,11 +60,15 @@ export const calendarAdapter: CalendarProvider = {
   },
 };
 export const hevyAdapter: HevyImportAdapter = {
-  async preview() {
+  async preview(csv) {
+    const parsed = await previewHevyImport(csv);
     return {
-      available: false,
-      exerciseAliases: [],
-      warnings: ['CSV import is planned; no file has been imported.'],
+      available: parsed.errors.length === 0,
+      exerciseAliases: parsed.names.map((incoming) => ({
+        incoming,
+        canonical: null,
+      })),
+      warnings: [...parsed.errors, ...parsed.warnings],
     };
   },
 };

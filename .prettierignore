@@ -5,3 +5,4 @@ pnpm-lock.yaml
 test-results
 playwright-report
 next-env.d.ts
+local-imports/

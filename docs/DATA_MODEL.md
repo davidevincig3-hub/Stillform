@@ -62,7 +62,7 @@ Workout snapshots store routine ID/name/structure, start/end, descriptive durati
 exercise ID/name/group/equipment/order/notes/rep range, all set fields and completion
 timestamps. Effort keeps optional RIR/RPE/failure without converting one into the
 other. Completed workouts are never rewritten by routine/library edits. Explicit
-provenance source is local_logger, legacy_v1 or future hevy_import; dataOrigin is
+provenance source is local_logger, legacy_v1 or hevy_import; dataOrigin is
 user, legacy_unverified or demo. Real history rejects demo/unverified entries.
 
 Local store key `adaptive-coach.gym.v2`: version=2, exercises, routines, active,
@@ -88,3 +88,46 @@ separate from history. CSV is one row per set (including uncompleted sets flagge
 false) from confirmed completed workouts; names/notes are quoted, formulas escaped,
 units kg, timestamps ISO. CSV cannot reconstruct the full routine/library graph.
 Restore requires a future validated preview/migration/confirmation workflow.
+
+## Hevy CSV v1 / store v2 schemaRevision 1
+
+Verified columns: title, start_time, end_time, description, exercise_title,
+superset_id, exercise_notes, set_index, set_type, weight_kg, reps, distance_km,
+duration_seconds, rpe. Quoted commas/newlines/doubled quotes and UTF-8 BOM are
+supported. Exactly these 14 columns are required, in any order; unknown schemas
+are rejected. Numeric values use source decimal points; invalid/negative values,
+unknown dates, missing title/exercise/index/type and reversed timestamps block import.
+Italian gen/feb/mar/apr/mag/giu/lug/ago/set/ott/nov/dic dates are interpreted in an
+explicit IANA timezone, not the machine timezone. DST gaps/ambiguity are errors.
+Original local strings and zone are preserved alongside canonical UTC timestamps.
+
+Grouping key is the exact source start/end/title/description tuple. Historical title
+is held in routineName for existing presentation compatibility and originalTitle in
+provenance; routineId and routineSnapshot are null. Exercise source names, row notes,
+zero-based set index, relative source row order, type, superset, distance and duration
+are retained. Contiguous source exercise runs become ordered blocks, splitting on
+repeated indices; each block sorts stably by source set_index. No rows are discarded.
+Completed imported sets may lack reps and load. Set loggedAt remains null because
+CSV has no individual logging timestamp. RIR always remains null, RPE is independent,
+and failure is true only for explicit failure type. Missing effort reduces comparison
+context, never excludes historical sets. No score or physiological estimate is added.
+
+Provenance includes hevy_import, import time, batch ID, original title, timezone,
+original start/end and SHA-256 fingerprint. The fingerprint hashes a versioned source
+representation: timezone, original timestamps, title/description and every ordered
+normalized source row. It excludes current mapping/library metadata and filename.
+An exact fingerprint already present is a confident duplicate and skipped. Any
+existing completed workout at the same canonical start, or multiple new groups at
+that start, is ambiguous and needs an explicit skip/import-separately choice. This
+conservative rule handles changed exports without silently merging them. Source
+workout IDs do not exist in this verified CSV. Physically distinct sessions with
+identical grouping metadata cannot be distinguished; correct such source data first.
+
+hevyMappings stores exact source name → confirmed canonical ID. No case/fuzzy/synonym
+merge is implicit. Several names can share one ID by user choice. importBatches records
+ID, timestamp, source, zone, workout/set/custom counts, duplicate skips and warnings.
+Both fields default empty when old v2 stores are decoded; schemaRevision defaults to 1.
+Old V1 isolation remains unchanged. Full JSON backups retain all fields; CSV adds
+source-name/type/index/order/notes, distance/duration/superset, fingerprint/batch fields.
+Muscle metadata is snapshotted; future metadata backfill needs a separate reviewed
+operation. Null load is not automatically bodyweight for imported sets.

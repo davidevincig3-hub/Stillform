@@ -6,8 +6,8 @@ Five pages, local workout flow, sample charts, goals, choice demo, PWA, schema a
 contracts. Gym V1 Real adds routine/custom-exercise management, identity-based actual
 previous exposures, completed/detail histories, descriptive analytics and JSON/CSV
 export. Migration isolates unverified legacy data. Next: validated JSON restore,
-multi-tab protection, offline resilience and a verified Hevy schema/parser with
-mapping/duplicate preview. Milestone: mobile
+multi-tab protection and offline resilience. Verified Hevy import with
+mapping/duplicate preview is complete. Milestone: mobile
 reload/edit/leave/return/finish/discard end-to-end tests.
 
 ## Phase 2 — Strava
@@ -38,3 +38,11 @@ coaching evaluations. Forecasts require separate validation.
 
 Production milestones include privacy/security, data export/deletion, accessibility,
 backup/observability, performance and full offline workflow testing.
+
+## Hevy milestone completed
+
+Verified Italian Hevy CSV parser, review/mapping/duplicate/confirmation UI, provenance,
+atomic local batches and repeat-import protection are implemented. Real mapped history
+feeds Gym exposures and descriptive analytics. Next: validated JSON backup restore
+with preview/confirmation and conflict handling; then reviewed muscle-metadata backfill,
+batch undo and broader export-version/timezone support. No external APIs enabled.

@@ -44,12 +44,13 @@ Gym logging and descriptive analytics use confirmed real local data.
 ## Gym persistence
 
 Current Gym domain is `src/domain/gym.ts`; storage uses `adaptive-coach.gym.v2`
-(version 2). Retain legacy V1 decoder and tests. Old unmarked records require review
+(version 2, schemaRevision 1). Retain legacy V1 decoder and tests. Old unmarked records require review
 before entering personal history; discard all sample previous-performance strings.
 Real queries filter completed confirmed-user origin and use stable exercise IDs.
 Preserve routine/exercise snapshots, JSON formatVersion 1 and CSV export safety.
-Never fill insufficient personal data with seeds. Hevy parsing stays unavailable
-until verified mappings and confirmation are implemented. Browser tests use fresh
+Never fill insufficient personal data with seeds. Hevy uses verified parsing,
+explicit mappings, fingerprints and confirmed atomic batches. Never commit personal
+local-imports/ files or copy their contents into fixtures. Browser tests use fresh
 port 3100; set PLAYWRIGHT_PRODUCTION=1 to check a built production app.
 
 <!-- BEGIN:nextjs-agent-rules -->

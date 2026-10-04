@@ -200,7 +200,7 @@ test('actual history, effort options, previous performance and detail deletion',
     page.getByText('No previous real exposure yet.').first(),
   ).toBeVisible();
 });
-test('JSON/CSV downloads and unsupported Hevy preview never import', async ({
+test('JSON/CSV downloads and invalid Hevy preview never import', async ({
   page,
 }, testInfo) => {
   await template(page);
@@ -209,9 +209,7 @@ test('JSON/CSV downloads and unsupported Hevy preview never import', async ({
   await page
     .getByRole('button', { name: 'Finish workout', exact: true })
     .click();
-  await page
-    .getByText('Backup, export & Hevy import preparation', { exact: true })
-    .click();
+  await page.getByText('Backup, export & Hevy import', { exact: true }).click();
   let pending = page.waitForEvent('download');
   await page
     .getByRole('button', { name: 'Export JSON backup', exact: true })
@@ -232,14 +230,14 @@ test('JSON/CSV downloads and unsupported Hevy preview never import', async ({
   const csvPath = testInfo.outputPath('history.csv');
   await download.saveAs(csvPath);
   expect(await readFile(csvPath, 'utf-8')).toContain('local_logger');
-  await page
-    .getByLabel('Inspect a Hevy CSV file · parser not yet available')
-    .setInputFiles({
-      name: 'hevy.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from('unknown,columns\nnot,parsed'),
-    });
-  await expect(page.getByText(/No verified Hevy CSV schema/)).toBeVisible();
+  await page.getByLabel('Select Hevy CSV').setInputFiles({
+    name: 'hevy.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('unknown,columns\nnot,parsed'),
+  });
+  await expect(
+    page.getByText(/CSV must contain exactly the 14 verified Hevy columns/),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () =>

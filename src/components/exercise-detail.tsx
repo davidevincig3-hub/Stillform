@@ -1,10 +1,12 @@
 'use client';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import { exerciseExposures, effortKnown, formatSet } from '@/analytics/gym';
 import { PageHeading } from './assessment';
 export function ExerciseDetail({ id }: { id: string }) {
   const { store, ready } = useWorkout();
+  const [limit, setLimit] = useState(20);
   if (!ready) return <p>Loading exercise…</p>;
   const exercise = store.exercises.find((e) => e.id === id);
   if (!exercise)
@@ -37,7 +39,7 @@ export function ExerciseDetail({ id }: { id: string }) {
           </p>
         </section>
       ) : (
-        exposures.map((e) => (
+        exposures.slice(0, limit).map((e) => (
           <section className="card" key={e.workoutId}>
             <div className="row">
               <h3>{new Date(e.date).toLocaleString()}</h3>
@@ -60,6 +62,11 @@ export function ExerciseDetail({ id }: { id: string }) {
             )}
           </section>
         ))
+      )}
+      {exposures.length > limit && (
+        <button className="secondary" onClick={() => setLimit((n) => n + 20)}>
+          More exposures
+        </button>
       )}
       <p className="footer-note">
         Historical references, not targets. No load-only performance score.

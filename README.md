@@ -71,9 +71,8 @@ all set rows from confirmed completed workouts, with completion flags, timestamp
 effort, notes and source. CSV is not a complete relational backup; names/notes are
 quoted and spreadsheet formula prefixes escaped. Weights use kg.
 
-Hevy import currently has parser, mapping, duplicate-review and confirmation
-interfaces plus a file-inspection UI. No verified CSV schema exists in this repo,
-so no column mappings are guessed and no file is imported. No external APIs run.
+Hevy CSV import uses a verified local parser, exercise mapping, duplicate review
+and explicit batch confirmation. See the Hevy workflow below. No external APIs run.
 
 The PWA has a manifest, icons and static offline fallback; install through your
 browser's install menu on localhost or HTTPS. Full offline editing is deferred.
@@ -103,7 +102,7 @@ scenarios were checked against both development and production builds, including
 390px and 430px workout screens.
 The original foundation tests are retained. Additional tests cover editable
 routines, stable custom exercise identities, real-only queries, legacy migration,
-snapshots, exports and Hevy refusal. Browser scenarios cover the complete Gym
+snapshots, exports and rejection of invalid Hevy schemas. Browser scenarios cover the complete Gym
 lifecycle, history/detail, previous performances, backups and 390px/430px mobile
 workout screens alongside the five-page smoke checks. Screenshots are written
 under ignored `test-results/`; tests use Chromium on an isolated server at port 3100.
@@ -114,3 +113,57 @@ to return to development-server tests.
 SQL/RLS and real physiological calculations are not validated or enabled. ESLint
 9 is required by the current Next lint plugin peer ranges and is upstream
 unsupported; the tooling upgrade is recorded in `docs/DECISIONS.md`.
+
+## Hevy CSV import
+
+Gym → Backup, export & Hevy import → Select Hevy CSV. Verify the source timezone
+(default Europe/Rome), review the summary and all warnings, then map every distinct
+exercise name to an existing exercise or create a custom exercise. Suggestions are
+never automatic merges. Multiple names may deliberately share an exercise identity.
+The bulk custom action prepares separate identities; review their muscle metadata
+before confirmation. Unassigned metadata is allowed and clearly reported.
+
+Review possible duplicates, select Review import summary, check the review box,
+and explicitly Confirm and import. Preview does not change browser storage. The
+single validated batch write preserves active workouts, routines and existing history.
+Quota/write failure leaves the previous store intact. Exact repeats skip existing
+workouts; changed exports at an existing start time require a skip/separate decision.
+Imported history powers Gym history/details, exercise exposures, previous performance
+and descriptive sets/frequency. Other pages remain sample data.
+
+The verified schema contains title, start_time, end_time, description, exercise_title,
+superset_id, exercise_notes, set_index, set_type, weight_kg, reps, distance_km,
+duration_seconds and rpe. Italian month abbreviations gen–dic are supported.
+CSV has no timezone offset: use the timezone where its local times were recorded.
+Unknown/ambiguous/nonexistent timestamps and invalid fields block the entire import.
+No RIR is inferred. RPE 10 is not failure unless set_type explicitly says failure.
+Missing load stays unrecorded; zero load is valid. Timed/distance sets are preserved.
+
+Store v2 schemaRevision=1 adds default-empty mapping rules/import batch summaries
+and optional imported fields; older v2 and V1 data remain compatible. JSON and CSV
+exports retain import provenance and source set context. Export a JSON backup first.
+Source files belong only in ignored local-imports/; do not commit personal exports.
+Tests use synthetic data. Optional local verification prints aggregate information
+and builds an import plan only in memory:
+
+```powershell
+$env:VERIFY_LOCAL_HEVY='1'
+pnpm exec vitest run tests/unit/hevy-reference.test.ts
+Remove-Item Env:VERIFY_LOCAL_HEVY
+```
+
+Limits: 10 MB CSV files, one source timezone per file, no fuzzy auto-merge or source
+workout IDs, no automatic replacement of changed historical exports, no row-level
+skip, no JSON restore/batch undo/cloud sync. All mappings must resolve; source errors
+must be corrected before reselecting. Identical timestamps/title/description group
+one source workout. Repeated set indices split exercise blocks with a warning;
+original source order and indices are retained. All completed set types contribute
+to descriptive set totals, including warmups/timed sets; this is not a hypertrophy
+estimate. Muscle metadata is snapshotted at import; later library edits do not
+retroactively rewrite history. SQL remains unapplied.
+
+Hevy milestone verification: 42 synthetic unit tests, 17 production Chromium browser
+tests, TypeScript, lint, formatting and production build pass. The optional ignored
+reference-file verification also passes independently. Browser coverage includes
+390px/430px, a 4,000-row synthetic batch, explicit confirmation, duplicate reuse and
+quota failure without partial mutation. Earlier foundation tests remain intact.

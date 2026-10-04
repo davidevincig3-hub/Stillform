@@ -51,9 +51,9 @@ and exercise metadata edits. Weights are kg; blank weight means bodyweight.
 Version-2 local store preserves active sessions across navigation/reload, validates
 writes and surfaces errors. Full JSON formatVersion 1 includes library, routines,
 active/history and separate legacy archive. CSV covers real completed set rows.
-JSON restore and automatic backups are future work. Hevy CSV file inspection is
-explicitly unsupported without a verified parser; uncertain identity must prevent
-confirmation. No external integrations have been added.
+JSON restore and automatic backups are future work. Hevy CSV import uses a verified
+local parser and explicit review; uncertain identity prevents confirmation.
+No external service integrations have been added.
 
 ## Targeted refinements
 
@@ -70,8 +70,8 @@ observations/model/validation/uncertainty metadata. No missing metrics are inven
 
 Gym quality must not be penalized for absent HR. Duration is descriptive and has
 little/no weight in fatigue estimation. Analyze actual load/reps/effort across
-several comparable exposures, not rigid short windows. CSV import will preview
-workouts, map aliases, resolve duplicates and establish baselines.
+several comparable exposures, not rigid short windows. CSV import previews
+workouts, maps names and resolves duplicates; personal baselines remain future work.
 
 Intra-workout coaching observes one poor set and requires coherent anomalies
 before alerting. Recovery/load convergence can strengthen confidence. Store
@@ -94,3 +94,23 @@ rankings are preferences, not exclusion rules. Disclose unavailable live verific
 Restrained cards/typography, space, dark mode, confidence pills, responsive charts
 and progressive disclosure. Mobile bottom nav becomes desktop side nav. Installable
 PWA with static offline fallback; full offline editing/auth/integrations are deferred.
+
+## Verified local Hevy import
+
+The Gym import milestone now supports the verified 14-column Italian Hevy export:
+select → parse/validate → preview → map unique exercise names → review duplicates →
+summary → explicit confirmation → atomic local batch. Preview remains in memory;
+errors block all mutation. Custom exercise metadata can remain Unassigned with
+explicit warnings. Suggestions require selection; no guessed anatomy or synonyms.
+Confirmed name mappings persist for repeat imports. No routine is inferred from a
+historical title. Imported source history is confirmed-user data, powers Gym queries,
+and never populates the sample Recovery/Home/Running/Plan pages.
+
+Preserve RPE and explicit failure independently; imported RIR and individual set
+logging times remain unknown. Preserve zero/null load, nullable reps, distance,
+duration, set type, superset, notes and source ordering. Unknown effort limits
+comparisons, not history inclusion. All completed types count in descriptive set
+totals; avoid interpreting these totals as equivalent hypertrophy stimulus.
+CSV source timezone is explicitly reviewed; default Europe/Rome. Repeated source
+indices are warned and preserved in separate blocks. Missing anatomical metadata
+remains an explicit Unassigned group. Full superset programming is not implemented.

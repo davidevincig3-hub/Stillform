@@ -43,6 +43,12 @@ export function WorkoutDetail({ id }: { id: string }) {
         <p className="caption">
           Source: {w.provenance.source} · No heart rate required
         </p>
+        {w.provenance.sourceStart && (
+          <p className="caption">
+            Original local time: {w.provenance.sourceStart} –{' '}
+            {w.provenance.sourceEnd} · {w.provenance.timeZone}
+          </p>
+        )}
         {w.notes && <p>{w.notes}</p>}
       </section>
       {w.exercises.map((e, index) => (
@@ -55,6 +61,9 @@ export function WorkoutDetail({ id }: { id: string }) {
           <p className="caption">
             {e.primaryMuscleGroup} · {e.notes}
           </p>
+          {e.sourceName && (
+            <p className="caption">Hevy exercise: {e.sourceName}</p>
+          )}
           {e.sets.map((s, i) => (
             <p className="detail-set" key={s.id}>
               <span>

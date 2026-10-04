@@ -33,10 +33,7 @@ import {
   emptyStore,
 } from '../../src/repositories/workout-storage';
 import { routines } from '../../src/repositories/seed';
-import {
-  previewHevyImport,
-  canConfirmHevyImport,
-} from '../../src/integrations/hevy-import';
+import { previewHevyImport } from '../../src/integrations/hevy-import';
 function routine(): GymRoutine {
   const now = new Date().toISOString();
   return {
@@ -293,24 +290,10 @@ describe('storage migration and export', () => {
     ).toThrow('Real history');
   });
 });
-describe('Hevy import preparation', () => {
-  it('does not guess a CSV schema or allow unresolved identities', () => {
-    const preview = previewHevyImport('anything');
-    expect(preview.stage).toBe('unsupported');
+describe('Hevy schema safety', () => {
+  it('rejects unknown columns without creating workouts', async () => {
+    const preview = await previewHevyImport('unknown,columns\nnot,parsed');
+    expect(preview.errors.length).toBeGreaterThan(0);
     expect(preview.workouts).toEqual([]);
-    expect(canConfirmHevyImport(preview)).toBe(false);
-    const parsed = previewHevyImport('fixture', {
-      schemaVersion: 'test-only',
-      parse: () => ({
-        workouts: [
-          { externalId: 'x', raw: {}, exercises: [{ sourceName: 'Press' }] },
-        ],
-        warnings: [],
-      }),
-    });
-    expect(parsed.mappings[0].resolution).toBe('unresolved');
-    expect(canConfirmHevyImport({ ...parsed, stage: 'confirmation' })).toBe(
-      false,
-    );
   });
 });

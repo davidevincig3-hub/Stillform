@@ -19,11 +19,29 @@ export const gymStorageKey = 'adaptive-coach.gym.v2';
 export const gymStoreSchema = z
   .object({
     version: z.literal(2),
+    schemaRevision: z.literal(1).default(1),
     exercises: z.array(libraryExerciseSchema),
     routines: z.array(gymRoutineSchema),
     active: gymWorkoutSchema.nullable(),
     history: z.array(gymWorkoutSchema),
     legacyArchive: z.array(gymWorkoutSchema),
+    hevyMappings: z.record(z.string(), z.string()).default({}),
+    importBatches: z
+      .array(
+        z.object({
+          id: z.string(),
+          importedAt: z.iso.datetime(),
+          source: z.literal('hevy_import'),
+          workouts: z.number().int().nonnegative(),
+          sets: z.number().int().nonnegative(),
+          duplicates: z.number().int().nonnegative(),
+          skippedSets: z.number().int().nonnegative().default(0),
+          customExercises: z.number().int().nonnegative(),
+          warnings: z.array(z.string()),
+          timeZone: z.string(),
+        }),
+      )
+      .default([]),
   })
   .superRefine((s, ctx) => {
     if (s.active?.status === 'completed' || s.active?.dataOrigin === 'demo')
@@ -51,16 +69,33 @@ export const gymStoreSchema = z
             code: 'custom',
             message: 'Routine references unknown exercise',
           });
+    const fingerprints = s.history
+      .map((w) => w.provenance.fingerprint)
+      .filter(Boolean);
+    if (new Set(fingerprints).size !== fingerprints.length)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Duplicate source fingerprints',
+      });
+    for (const id of Object.values(s.hevyMappings))
+      if (!s.exercises.some((e) => e.id === id))
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Mapping references unknown exercise',
+        });
   });
 export type GymStore = z.infer<typeof gymStoreSchema>;
 export function initialGymStore(): GymStore {
   return {
     version: 2,
+    schemaRevision: 1,
     exercises: structuredClone(builtInExercises),
     routines: [],
     active: null,
     history: [],
     legacyArchive: [],
+    hevyMappings: {},
+    importBatches: [],
   };
 }
 export function parseGymStore(raw: string): GymStore {

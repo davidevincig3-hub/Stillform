@@ -47,6 +47,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   function save(next: GymStore) {
     try {
       if (restored.error) throw new Error(restored.error);
+      if (localStorage.getItem(gymStorageKey) !== raw)
+        throw new Error('Storage changed since this view was loaded');
       parseGymStore(JSON.stringify(next));
       writeBrowserValue(gymStorageKey, JSON.stringify(next));
       setWriteError('');

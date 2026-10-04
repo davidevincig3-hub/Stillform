@@ -26,6 +26,16 @@ export const routineExerciseSchema = z.object({
   notes: z.string().max(2000).default(''),
 });
 export type RoutineExercise = z.infer<typeof routineExerciseSchema>;
+export const gymSetSchema = setSchema.extend({
+  reps: z.number().int().min(0).nullable(),
+  setType: z.string().optional(),
+  distanceKm: z.number().nonnegative().nullable().optional(),
+  durationSeconds: z.number().nonnegative().nullable().optional(),
+  supersetId: z.string().nullable().optional(),
+  sourceSetIndex: z.number().int().nonnegative().optional(),
+  sourceExerciseNotes: z.string().optional(),
+  sourceRowOrder: z.number().int().nonnegative().optional(),
+});
 export const gymRoutineSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(120),
@@ -44,7 +54,8 @@ export const gymWorkoutExerciseSchema = z.object({
   equipment: z.string().optional(),
   notes: z.string(),
   repRange: routineExerciseSchema.shape.repRange,
-  sets: z.array(setSchema),
+  sourceName: z.string().optional(),
+  sets: z.array(gymSetSchema),
 });
 export type GymWorkoutExercise = z.infer<typeof gymWorkoutExerciseSchema>;
 export const gymWorkoutSchema = z
@@ -64,6 +75,12 @@ export const gymWorkoutSchema = z
       source: z.enum(['local_logger', 'hevy_import', 'legacy_v1']),
       recordedAt: z.iso.datetime(),
       externalId: z.string().optional(),
+      fingerprint: z.string().optional(),
+      batchId: z.string().optional(),
+      originalTitle: z.string().optional(),
+      sourceStart: z.string().optional(),
+      sourceEnd: z.string().optional(),
+      timeZone: z.string().optional(),
     }),
   })
   .superRefine((s, ctx) => {
@@ -83,7 +100,21 @@ export const gymWorkoutSchema = z
       });
     for (const e of s.exercises)
       for (const set of e.sets)
-        if (set.completed && set.reps === null)
+        if (
+          s.provenance.source !== 'hevy_import' &&
+          !setSchema.safeParse(set).success
+        )
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Invalid locally logged set',
+          });
+    for (const e of s.exercises)
+      for (const set of e.sets)
+        if (
+          set.completed &&
+          set.reps === null &&
+          s.provenance.source !== 'hevy_import'
+        )
           ctx.addIssue({
             code: 'custom',
             message: 'Completed sets require reps',

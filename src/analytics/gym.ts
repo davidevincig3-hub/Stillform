@@ -1,5 +1,7 @@
 import type { GymWorkout } from '../domain/gym';
 import type { WorkoutSet } from '../domain/models';
+import type { gymSetSchema } from '../domain/gym';
+import type { z } from 'zod';
 export function realHistory(workouts: GymWorkout[]) {
   return workouts
     .filter((w) => w.status === 'completed' && w.dataOrigin === 'user')
@@ -29,8 +31,8 @@ export function exerciseExposures(
     })
     .slice(0, limit);
 }
-export function formatSet(set: WorkoutSet) {
-  return `${set.weight === null ? 'Bodyweight' : `${set.weight} kg`} × ${set.reps ?? '—'}${set.rir !== null ? ` @ ${set.rir} RIR` : ''}${set.rpe !== null ? ` · ${set.rpe} RPE` : ''}${set.failure ? ' · failure' : ''}`;
+export function formatSet(set: z.infer<typeof gymSetSchema>) {
+  return `${set.weight === null ? (set.sourceSetIndex !== undefined ? 'Load unrecorded' : 'Bodyweight') : `${set.weight} kg`}${set.reps !== null ? ` × ${set.reps}` : ''}${set.distanceKm != null ? ` · ${set.distanceKm} km` : ''}${set.durationSeconds != null ? ` · ${set.durationSeconds} s` : ''}${set.rir !== null ? ` @ ${set.rir} RIR` : ''}${set.rpe !== null ? ` · ${set.rpe} RPE` : ''}${set.failure ? ' · failure' : ''}${set.setType && set.setType !== 'normal' && set.setType !== 'failure' ? ` · ${set.setType}` : ''}${set.supersetId ? ` · superset ${set.supersetId}` : ''}`;
 }
 export function effortKnown(set: WorkoutSet) {
   return set.rir !== null || set.rpe !== null || set.failure;
