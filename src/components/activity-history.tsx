@@ -73,7 +73,7 @@ export function ActivityHistory({ running = false }: { running?: boolean }) {
         <span className="tag">Real data</span>
       </div>
       <p>
-        <Link href="/integrations">Connect / manage Strava →</Link>
+        <Link href="/integrations">Connect / manage Polar or Strava →</Link>
         {running && (
           <>
             {' '}
@@ -124,8 +124,8 @@ export function ActivityHistory({ running = false }: { running?: boolean }) {
       )}
       {!filtered.length && (
         <p className="muted">
-          No real activities available. Connect and sync Strava to build your
-          registry.
+          No real activities available. Connect and sync Polar or Strava to
+          build your registry.
         </p>
       )}
       {filtered.slice(page * size, page * size + size).map((a) => (
@@ -232,6 +232,24 @@ interface DetailData {
     streamStatus: { kind: string; samples: number; seriesType: string }[];
     laps: ActivityLap[];
     warnings: string[];
+    polar?: {
+      sensorQuality: string;
+      exercises: {
+        id: string | null;
+        runningIndex: number | null;
+        trainingLoad: Record<string, unknown>;
+        samples: {
+          type: string;
+          unit: string;
+          count: number;
+          intervalMillis: number | null;
+        }[];
+        zones: Record<string, unknown>[];
+        pauses: Record<string, unknown>[];
+        routes: Record<string, unknown>;
+        statistics: Record<string, unknown>;
+      }[];
+    };
   }[];
 }
 export function ActivityDetail({ id }: { id: string }) {
@@ -251,14 +269,17 @@ export function ActivityDetail({ id }: { id: string }) {
       active = false;
     };
   }, [id]);
-  async function enrich(sourceKey: string) {
+  async function enrich(sourceKey: string, provider = 'strava') {
     setBusy(true);
     try {
-      const r = await fetch('/api/integrations/enrich', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceKey }),
-      });
+      const r = await fetch(
+        provider === 'polar' ? '/api/polar/enrich' : '/api/integrations/enrich',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sourceKey }),
+        },
+      );
       const body = await r.json();
       if (!r.ok) throw new Error(body.error || 'Enrichment failed');
       setData(await registryGet(`/api/activities/${encodeURIComponent(id)}`));
@@ -312,6 +333,12 @@ export function ActivityDetail({ id }: { id: string }) {
                   a.elevationM === null ? 'Unavailable' : `${a.elevationM} m`,
                 ],
                 ['Device', a.device ?? 'Unavailable'],
+                [
+                  'Elapsed pace',
+                  a.distanceM && a.elapsedSeconds
+                    ? `${(a.elapsedSeconds / (a.distanceM / 1000) / 60).toFixed(2)} min/km (includes pauses)`
+                    : 'Unavailable',
+                ],
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="caption">{label}</p>
@@ -353,11 +380,11 @@ export function ActivityDetail({ id }: { id: string }) {
                 · Last sync: {s.syncedAt}
                 {s.deleted ? ' · Deleted at provider' : ''}
               </p>
-              {s.provider === 'strava' && !s.deleted && (
+              {['strava', 'polar'].includes(s.provider) && !s.deleted && (
                 <button
                   className="secondary"
                   disabled={busy}
-                  onClick={() => enrich(s.key)}
+                  onClick={() => enrich(s.key, s.provider)}
                 >
                   Fetch real detail, streams & laps
                 </button>
@@ -394,6 +421,60 @@ export function ActivityDetail({ id }: { id: string }) {
                 <p className="caption" key={i}>
                   {w}
                 </p>
+              ))}
+              {r.polar?.exercises.map((e, i) => (
+                <div key={e.id ?? i}>
+                  <h3>Polar exercise {i + 1} · sensor quality unknown</h3>
+                  <p className="caption">
+                    Secondary vendor Running Index:{' '}
+                    {e.runningIndex ?? 'Unavailable'}
+                  </p>
+                  <details>
+                    <summary>Vendor training load</summary>
+                    <pre className="polar-json">
+                      {JSON.stringify(e.trainingLoad, null, 2)}
+                    </pre>
+                  </details>
+                  <p>
+                    Samples:{' '}
+                    {e.samples
+                      .map(
+                        (s) =>
+                          `${s.type}: ${s.count} · ${s.unit} · interval ${s.intervalMillis ?? 'unknown'} ms`,
+                      )
+                      .join(' · ') || 'Unavailable'}
+                  </p>
+                  <details>
+                    <summary>
+                      Zones ({e.zones.length}) · pauses ({e.pauses.length})
+                    </summary>
+                    <pre className="polar-json">
+                      {JSON.stringify(
+                        { zones: e.zones, pauses: e.pauses },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                    <p className="caption">
+                      Zone inZone values are milliseconds. These are provider
+                      values, not custom intensity conclusions.
+                    </p>
+                  </details>
+                  <details>
+                    <summary>Route & statistics</summary>
+                    <pre className="polar-json">
+                      {JSON.stringify(
+                        { routes: e.routes, statistics: e.statistics },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                    <p className="caption">
+                      Coordinates and elapsed milliseconds are source data.
+                      Speed units remain provider-unspecified.
+                    </p>
+                  </details>
+                </div>
               ))}
             </section>
           ))}

@@ -1117,3 +1117,10 @@ textarea {
 .hevy-import p {
   overflow-wrap: anywhere;
 }
+.polar-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow: auto;
+  font-size: 0.8rem;
+}

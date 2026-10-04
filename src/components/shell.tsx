@@ -72,7 +72,9 @@ export function Shell({ children }: { children: ReactNode }) {
               ? 'GYM · REAL LOCAL DATA'
               : path.startsWith('/activities') || path === '/integrations'
                 ? 'REAL ACTIVITY REGISTRY'
-                : 'DEMO · SAMPLE DATA'}
+                : path === '/recovery'
+                  ? 'RECOVERY · SEE DATA LABELS'
+                  : 'DEMO · SAMPLE DATA'}
           </span>
           <button
             className="icon-button"

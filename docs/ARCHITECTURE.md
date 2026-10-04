@@ -1,5 +1,49 @@
 # Architecture
 
+## Polar v4 extension (current)
+
+`domain/polar.ts` provides normalized physiological schemas, family scopes/windows, date
+chunking and version-1 checkpoint state. `server/polar-client.ts` centralizes v4 endpoints,
+authorization-code/refresh Basic exchanges and injectable HTTP/error/backoff behavior.
+`polar-normalize.ts` separates pure source parsing from UI/persistence. `polar-service.ts`
+serializes owner operations with existing leases, rotates tokens before reads, retries one
+401, preserves resumable discovery/detail queues and writes the canonical registry.
+`/api/polar/[action]` owns authentication/CSRF/origin checks and curated secret-free responses.
+The original Strava routes/client remain. Shared review/login are independent of Strava setup.
+
+Shared repositories accept provider-specific encrypted accounts. Polar physiological blobs
+use a separate CAS/versioned `integration_polar` table via unapplied SQL 0005, or encrypted
+development files under the same existing contract. Legacy dev records default to an empty
+Polar store without changing their Strava or registry state. Supabase REST uses the privileged
+`SUPABASE_SECRET_KEY` in apikey only; deprecated JWT service-role fallback is secondary.
+All integration credentials remain server-only. App Auth tokens remain encrypted HttpOnly
+cookies, provider state cookies are distinct and consumed once, owner checks are mandatory.
+
+Date windows are endpoint-specific: 90/30/28/30/90 days for training/sleep/nightly/continuous/
+PPI discovery. Sleep/PPI discover available dates, then hydrate one feature day at a time.
+Training enrichment uses its local date plus exact ID selection. At most five sequential
+windows per UI click, 1.1-second minimum pacing and persistent Retry-After/backoff; there is
+no automatic polling. Missing scopes finish only the relevant module as unavailable.
+Cross-owner distributed client-budget allocation remains future work before multi-tenant use.
+
+Registry and recovery CAS writes are separate, not a cross-table transaction. Exact source
+identities and deterministic upserts make retry after intermediate persistence safe. Raw
+revisions survive edits. Large arrays live in rich-data storage; activity detail gives sample
+availability/laps and available zone/pause/route/statistics data. Ordinary list responses omit
+raw/revisions. `analytics/polar-recovery.ts` implements descriptive windows/counts/means/UI
+maturity only; `real-recovery.tsx` renders real and separate sample modes without fallback.
+
+Owner-bound Polar account identity is an explicit limitation: current minimal scopes/token
+response expose no stable athlete ID. Connection requires own/same-account user attestation,
+source athleteId is null and permanent IDs are namespaced by authenticated owner. This does
+not verify account switching. No profile scope or invented jti-as-athlete identity is used.
+Canonical fields preserve selection except Polar recorded HR supersedes Strava HR; Gym
+structure stays authoritative. See DECISIONS for the narrow precedence policy.
+
+No suitable notification or revocation endpoint is documented in v4. Manual sync and local
+credential removal plus Polar-account grant revocation are supported. No legacy v3 endpoint
+or premium `/subscriptions` behavior is substituted. Existing Strava webhooks stay dormant.
+
 | Module                      | Boundary                                                            |
 | --------------------------- | ------------------------------------------------------------------- |
 | `src/app`, `src/components` | Routes, presentation, form orchestration                            |

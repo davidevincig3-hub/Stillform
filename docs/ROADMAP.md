@@ -1,5 +1,27 @@
 # Roadmap
 
+## Current status — Polar v4 source milestone implemented
+
+Secure owner-bound Polar OAuth/rotating refresh, independent dormant Strava configuration,
+encrypted shared repositories, endpoint-specific resumable backfill, explicit training
+enrichment, canonical linking, sleep/Nightly/continuous-HR/PPI/device/catalog normalization
+and real Recovery source display are implemented with synthetic tests. Supabase's current
+secret key is primary; SQL 0005 and live credentials/authorization remain unapplied/unverified.
+Sparse history and zero-night success are first-class states. No personalized engine yet.
+
+The earlier Strava setup recommendation is superseded: the user cannot currently register
+a Strava app, so leave it dormant. Next configure Supabase plus Polar, verify owner isolation,
+lease/CAS behavior and real OAuth refresh, sync a small bounded range and review matches.
+Collect nights prospectively and validate source timing/quality before custom physiology.
+Do not require a historic sleep baseline to start collection.
+
+Follow-ups: authenticated physiological export/deletion, normalized/indexed larger-history
+storage, client-wide distributed budget and operational retry worker before multi-user hosting,
+continuous/PPI exploratory charts, explicit account-switch support if a stable identity contract
+becomes available, Gym cloud/reconciliation with user-approved migration and JSON restore.
+After real observation quality is understood, design/evaluate personalized Recovery and
+comparable-running analytics separately, then Plan decisions and grounded Coach/Consensus.
+
 ## Phase 1 — Foundation + gym logger + mock dashboard
 
 Five pages, local workout flow, sample charts, goals, choice demo, PWA, schema and

@@ -1,7 +1,7 @@
 # Stillform — Adaptive Training Coach
 
 Mobile-first training and recovery application. **Gym logs and descriptive analytics
-use real local data; Strava can provide real activity/run history after secure setup.** No account, external
+use real local data; Polar v4 can provide real training and Recovery source history after secure setup. Strava remains supported but dormant.** No account, external
 service or credentials required for local Gym and sample dashboards.
 
 ## Run locally
@@ -13,7 +13,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000. No `.env` is required. `.env.example` documents optional secure Strava/Supabase setup below.
+Open http://localhost:3000. No `.env` is required. `.env.example` documents optional secure Polar/Strava/Supabase setup below.
 
 ```sh
 pnpm typecheck
@@ -54,7 +54,7 @@ They are not synced or automatically backed up. Export JSON regularly; clearing
 site storage removes local data. Concurrent edits in multiple tabs are unsupported;
 use one active tab. Coach messages are memory-only.
 Gym routines, workouts, previous performances and descriptive analytics are real
-local data. Recovery/Home/Plan and analytical Running cards remain labeled demos; Running history uses real canonical records. Templates contain only
+local data. Home/Plan and analytical Running cards remain labeled demos; Recovery has a separate real Polar mode and Running history uses real canonical records. Templates contain only
 routine structure, never sample performances.
 
 Gym storage uses `adaptive-coach.gym.v2` (version 2). V1 data is read from
@@ -195,7 +195,7 @@ and origin for your imported history.
    | `STRAVA_CLIENT_SECRET`       | Your Strava application secret                              |
    | `SUPABASE_URL`               | Project HTTPS URL                                           |
    | `SUPABASE_PUBLISHABLE_KEY`   | Project publishable key, used server-side for Auth          |
-   | `SUPABASE_SERVICE_ROLE_KEY`  | Project service-role key, server-only                       |
+   | `SUPABASE_SECRET_KEY`        | Project secret key, server-only                             |
 
    Generate the encryption key on your own machine with
    `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
@@ -266,8 +266,8 @@ Canonical activities have provider-independent IDs, sport, UTC/local timing, nul
 recorded values, quality/missingness, field provenance, source keys and optional Gym
 links. Source records preserve provider type/ID, fingerprint, raw values and revisions.
 Selected fields retain their existing provider; additional sources fill absent values.
-Future Polar precedence can be added without overwriting source records; Polar is not
-implemented. Matching uses sport + start + elapsed duration + distance, never title alone.
+Polar now supplies selected HR ahead of Strava when both have values, with per-field
+provenance; all source snapshots remain intact. Matching uses sport + start + elapsed duration + distance, never title alone.
 A unique high heuristic match can auto-link across providers. Same-provider distinct
 IDs, weak/multiple matches require review. Decisions persist; canonical ID aliases
 preserve links after merging. Pending reviews are excluded from confirmed-session queries.
@@ -297,3 +297,138 @@ Production browser verification: `pnpm build`, then
 your normal browser storage is untouched. Browser bundle checks reject server secret
 configuration names. Deployment tracing excludes personal imports, environment files and
 development credential files.
+
+## Polar AccessLink Dynamic API v4 — setup and real verification
+
+No real Polar account or database has been used during implementation. Tests use synthetic
+responses only. Gym/Hevy browser data, backups and Git history are unchanged. Strava client
+credentials are **not required** for Polar. Connection never imports history automatically.
+
+1. Create a Supabase project. In its SQL editor, deliberately apply the repository migrations
+   `0001` through `0005` in order (or only unapplied ones). Nothing applies them automatically.
+   Create your integration email/password user under Authentication; keep public signup off
+   if this remains a personal app. Check service-only table/RPC grants and owner isolation
+   before production. SQL/RLS verification against a real database is still pending.
+2. Sign in with your Polar Flow account at [AccessLink administration](https://admin.polaraccesslink.com).
+   Create a client for Stillform with your actual service details. Register the exact redirect
+   **`http://localhost:3000/api/polar/callback`**. Configure that redirect URL, not merely the
+   admin interface's default URL. For deployment register the corresponding HTTPS URL and
+   set `APP_ORIGIN` to its origin. Follow any mandatory Polar account consent requirements.
+3. Copy `.env.example` to ignored `.env.local`, filling these names locally:
+
+   | Variable                     | Value                                                                   |
+   | ---------------------------- | ----------------------------------------------------------------------- |
+   | `APP_ORIGIN`                 | `http://localhost:3000`                                                 |
+   | `INTEGRATION_STORAGE`        | `supabase`                                                              |
+   | `INTEGRATION_ENCRYPTION_KEY` | Independently generated 32-byte key, 64 hex characters; retain securely |
+   | `POLAR_CLIENT_ID`            | Your registered Polar client ID                                         |
+   | `POLAR_CLIENT_SECRET`        | Your registered Polar client secret                                     |
+   | `SUPABASE_URL`               | Your project HTTPS URL                                                  |
+   | `SUPABASE_PUBLISHABLE_KEY`   | Your project publishable key for Auth                                   |
+   | `SUPABASE_SECRET_KEY`        | Your project privileged secret key; server only                         |
+
+   Generate the encryption key with the Node command in the Strava setup section. Never
+   enter these secrets in chat, public variables or Git. `SUPABASE_SERVICE_ROLE_KEY` remains
+   an explicitly **deprecated fallback**, only used when the secret key is absent. Opaque
+   Supabase secret keys use `apikey`; they are never sent as Bearer JWTs.
+
+4. Run `pnpm dev`, open `/integrations`, and sign in within **Polar connection**. Confirm that
+   you will authorize your own Polar account (the same one on reconnect). Click Connect
+   Polar, review scopes, authorize, and return. V4 tokens do not expose a stable athlete ID;
+   linkage is owner-bound and account switching is unsupported. The confirmation is a user
+   attestation, not provider-verified account identity. Never connect another person's account.
+5. Click **Sync device & sport context** first, then set From inclusive / To exclusive and
+   **Sync training sessions**, **Sync Recovery data** or **Sync all**. Each click processes at
+   most five sequential windows. **Continue Polar sync** resumes saved discovery/detail
+   queues after interruption; starting a named sync again restarts that family's requested
+   range without duplicating permanent session IDs. Older missing history is normal.
+6. Inspect per-family requested range, oldest/newest returned, empty windows, latest success,
+   scopes and errors. Zero sessions/nights is a successful result. Use `/activities` to review
+   uncertain matches; Running lists real canonical runs separately from sample analytics.
+   Open a run and explicitly fetch real detail for samples/laps/zones/route/vendor fields.
+7. Open Recovery. Once connected, real mode displays real measurements or Insufficient data,
+   never sample-filled gaps. Inspect 7/28/90-day charts and Analyze. Collect new nights
+   prospectively. The labelled sample view is available only as a separate explicit view.
+8. Disconnect Polar requires confirmation, deletes its local credentials and retains history.
+   Also revoke the app grant through Polar account settings. No documented v4 revocation
+   endpoint is assumed. Sign out ends the application session, not the saved provider grant.
+
+Production integration storage requires Supabase before authorization. For intentional
+single-user local development only, `INTEGRATION_STORAGE=dev-file` plus
+`DEV_INTEGRATION_ACCESS_KEY` (random, at least 32 characters), the encryption key and Polar
+client/origin variables avoid Supabase. Run `pnpm dev`; `pnpm start` rejects dev-file mode.
+Files stay encrypted under ignored `.integration-dev/`; this is not production cloud storage.
+
+### Implemented v4 adapter contract
+
+Official contract checked against [Polar v4 documentation and Swagger](https://www.polar.com/polar-api-v4/).
+OAuth uses `https://auth.polar.com/oauth/authorize` and `/oauth/token`; API requests use
+`https://www.polaraccesslink.com/v4/data`. Scopes are exactly `training_sessions:read`,
+`sleep:read`, `nightly_recharge:read`, `continuous_samples:read`, `ppi_data:read`,
+`devices:read`, `sports:read`. No profile, picture, daily activity or write scope is requested.
+Partial grants remain useful; unavailable modules report their missing scope.
+
+| Relative endpoint               | Discovery window | Explicit details                                                                                    |
+| ------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
+| `/training-sessions/list`       | 90 days          | 1 day; samples, training-load-report, laps, routes, statistics, zones, pause-times                  |
+| `/sleeps`                       | 30 days          | Available-date queue; 1 day with sleep-result, original-sleep-result, sleep-evaluation, sleep-score |
+| `/nightly-recharge-results`     | 28 days          | Constituent vendor fields returned directly; optional sample enrichment not wired                   |
+| `/continuous-samples`           | 30 days          | heart-rate-samples feature in each window                                                           |
+| `/ppi-samples`                  | 90 days          | Available-date queue; 1 day with samples                                                            |
+| `/user-devices`, `/sports/list` | No date window   | Explicit context sync                                                                               |
+
+Requests use from-inclusive/to-exclusive date windows and repeated `features` parameters.
+There is no assumed page-number API or session-by-ID endpoint: enrichment fetches its local
+date then selects the exact permanent identifier. Current v4 client limits are 3,000/15 min
+and 100,000/24 h. Owner leases bound concurrency, requests are paced at least 1.1 seconds,
+and 429 Retry-After pauses persist (15-minute fallback without that header). A shared
+distributed client-wide budget across multiple deployed users is future work; this personal
+implementation should not be deployed as a high-volume multi-tenant service without it.
+No aggressive polling. No v4 notification/webhook mechanism is documented; `/subscriptions`
+is a premium user subscription API, not a notification API. Dormant Strava webhooks remain.
+
+### Models, trustworthy UI and remaining limits
+
+`domain/polar.ts` models version-1 server physiological storage, nullable measurements,
+quality/context, raw revisions and resumable jobs; `server/polar-*` implement the adapter,
+normalizers and services. Tokens use the shared encrypted account repository; refreshed
+tokens persist before data requests, one 401 is retried and revoked grants require reconnect.
+Canonical registry v1 and Gym storage v2/revision 2 are preserved. SQL 0005 is unapplied.
+Polar strength links to existing Gym summaries without creating sets/CompletedWorkouts.
+The same matcher supports future Polar+Strava copies and manual ambiguous-match decisions.
+Existing selected fields stay selected except recorded Polar HR takes precedence over Strava
+HR; Gym title/timing/structure and source snapshots remain authoritative/preserved.
+
+Sleep stores timing, seconds asleep/span/interruptions/phases, continuity, efficiency,
+device, edits/incompleteness and secondary vendor score. Nightly Recharge stores vendor
+RMSSD/RRI/respiration intervals in **milliseconds** plus vendor baseline/status context.
+RRI is not relabelled as mean night HR; respiration interval is not breaths/min. Continuous
+HR stores date, offset milliseconds, BPM/device/trigger separately from workouts/night HR.
+PPI preserves intervals, error estimates, skin contact, movement/offline and device triggers.
+Missing absolute sample timezone remains unknown. No HRV is reconstructed from coarse BPM.
+Raw structures retain unsupported/edited timing details. Device sensor quality is unknown;
+a watch name alone does not prove which HR sensor was used.
+
+Recovery shows actual nightly values and sleep timing/quality, gaps, counts and descriptive
+means. UI-only maturity defaults: 7 preliminary / 14 developing / 28 established **complete
+observations**, configurable in `analytics/polar-recovery.ts` and not scientifically validated.
+Incomplete observations are shown but excluded from reference means/maturity. Maturity is
+per metric and chosen window, not a personalized Recovery verdict. Analyze exposes selected
+real dates/units/coverage/source; there is no real AI analysis. Vendor scores are secondary.
+Running detail preserves samples and context server-side and displays availability, laps,
+zones/pauses/routes/statistics, vendor Running Index/load and direct elapsed pace. Ambiguous
+speed-sample units stay provider-unspecified, with no invented speed conversion.
+
+Still pending: personalized Recovery score/Decision Engine, adaptive recommendations, drift,
+efficiency/threshold/VO2 analytics, real Coach/Consensus/Calendar, cloud Gym migration,
+continuous/PPI exploratory charts, notification/background worker, authenticated export and
+deletion for server physiological records, multi-owner client-rate allocation and indexed
+large-history storage. Home/Plan/Coach and Running analytical cards remain labelled samples.
+Sparse Polar history is not complete running history. Device/sport context requires an
+explicit sync; unknown sport IDs remain `other` until re-synced with catalog context.
+Optional features/permissions/device measurements and historical availability vary. A window
+without returned records is not a measured anomaly or proof of an API retention policy.
+
+Recommended next milestone: configure Supabase and one real Polar client, verify SQL owner
+isolation and OAuth/refresh, sync a small range, review matches, then collect real overnight
+observations and inspect source quality before designing any personalized Recovery engine.

@@ -194,12 +194,17 @@ export async function POST(
   try {
     const c = integrationConfig();
     checkOrigin(request, c);
-    if (missingConfiguration(c).length)
+    const { action } = await params;
+    if (
+      missingConfiguration(
+        c,
+        ['login', 'logout', 'review'].includes(action) ? 'shared' : 'strava',
+      ).length
+    )
       throw new AuthError(
         'Secure integration configuration is incomplete',
         503,
       );
-    const { action } = await params;
     if (action === 'login') {
       await loginSession(await request.json(), c);
       return NextResponse.json(

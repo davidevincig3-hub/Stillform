@@ -134,13 +134,23 @@ export async function requireOwner(c: IntegrationConfig) {
 export async function logoutSession() {
   (await cookies()).delete(SESSION_COOKIE);
   (await cookies()).delete(STATE_COOKIE);
+  (await cookies()).delete('stillform-polar-state');
 }
-export async function setState(value: string, c: IntegrationConfig) {
-  (await cookies()).set(STATE_COOKIE, value, cookieOptions(c, 600));
+export async function setState(
+  value: string,
+  c: IntegrationConfig,
+  provider: 'strava' | 'polar' = 'strava',
+) {
+  (await cookies()).set(
+    provider === 'polar' ? 'stillform-polar-state' : STATE_COOKIE,
+    value,
+    cookieOptions(c, 600),
+  );
 }
-export async function consumeState() {
+export async function consumeState(provider: 'strava' | 'polar' = 'strava') {
   const jar = await cookies(),
-    value = jar.get(STATE_COOKIE)?.value ?? '';
-  jar.delete(STATE_COOKIE);
+    name = provider === 'polar' ? 'stillform-polar-state' : STATE_COOKIE,
+    value = jar.get(name)?.value ?? '';
+  jar.delete(name);
   return value;
 }

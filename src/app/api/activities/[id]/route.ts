@@ -26,7 +26,7 @@ export async function GET(
       ),
       rich = await Promise.all(
         sources
-          .filter((s) => s.provider === 'strava')
+          .filter((s) => ['strava', 'polar'].includes(s.provider))
           .map((s) => repo.rich(owner, s.key)),
       );
     return NextResponse.json(
@@ -50,6 +50,19 @@ export async function GET(
             return lap;
           }),
           warnings: r!.warnings,
+          polar: r!.polar
+            ? {
+                sensorQuality: r!.polar.sensorQuality,
+                exercises: r!.polar.exercises.map((e) => ({
+                  ...e,
+                  samples: e.samples.map(({ values, ...s }) => ({
+                    ...s,
+                    count: values.length,
+                  })),
+                  routes: Object.keys(e.routes).length ? e.routes : {},
+                })),
+              }
+            : undefined,
         })),
       },
       { headers: { 'Cache-Control': 'no-store' } },

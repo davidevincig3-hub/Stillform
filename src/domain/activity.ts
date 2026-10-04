@@ -156,6 +156,7 @@ export interface ActivityLap {
   raw: Record<string, unknown>;
 }
 export interface RichActivityData {
+  polar?: import('./polar').PolarFeatures;
   sourceKey: string;
   fetchedAt: string;
   streams: NormalizedStream[];

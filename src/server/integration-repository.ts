@@ -18,6 +18,12 @@ import {
 import type { Connection } from './strava-client';
 import { seal, unseal, fingerprint } from './integration-security';
 import type { IntegrationConfig } from './integration-config';
+import {
+  emptyPolarStore,
+  polarStoreSchema,
+  type PolarStore,
+} from '../domain/polar';
+export type OAuthProvider = 'strava' | 'polar';
 export interface WebhookEvent {
   object_type: 'activity' | 'athlete';
   object_id: number;
@@ -34,9 +40,15 @@ export interface RegistrySnapshot {
 export interface IntegrationRepository {
   read(owner: string): Promise<RegistrySnapshot>;
   save(owner: string, base: number, state: ActivityRegistry): Promise<void>;
-  account(owner: string): Promise<Connection | null>;
-  saveAccount(owner: string, account: Connection): Promise<void>;
-  removeAccount(owner: string): Promise<void>;
+  account(owner: string, provider?: OAuthProvider): Promise<Connection | null>;
+  saveAccount(
+    owner: string,
+    account: Connection,
+    provider?: OAuthProvider,
+  ): Promise<void>;
+  removeAccount(owner: string, provider?: OAuthProvider): Promise<void>;
+  readPolar(owner: string): Promise<{ version: number; state: PolarStore }>;
+  savePolar(owner: string, base: number, state: PolarStore): Promise<void>;
   ownerForAthlete(id: string): Promise<string | null>;
   rich(owner: string, key: string): Promise<RichActivityData | null>;
   saveRich(owner: string, key: string, data: RichActivityData): Promise<void>;
@@ -58,8 +70,10 @@ export class SupabaseIntegrationRepository implements IntegrationRepository {
         ...init,
         cache: 'no-store',
         headers: {
-          apikey: this.c.serviceKey,
-          Authorization: `Bearer ${this.c.serviceKey}`,
+          apikey: this.c.secretKey || this.c.serviceKey,
+          ...(!this.c.secretKey
+            ? { Authorization: `Bearer ${this.c.serviceKey}` }
+            : {}),
           'Content-Type': 'application/json',
           ...init.headers,
         },
@@ -94,31 +108,60 @@ export class SupabaseIntegrationRepository implements IntegrationRepository {
         'Registry changed. Resume the operation from fresh state.',
       );
   }
-  async account(owner: string) {
+  async account(owner: string, provider: OAuthProvider = 'strava') {
     const rows = (await this.request(
-      `integration_accounts?owner_id=eq.${encodeURIComponent(owner)}&provider=eq.strava&select=credential`,
+      `integration_accounts?owner_id=eq.${encodeURIComponent(owner)}&provider=eq.${provider}&select=credential`,
     )) as { credential: string }[];
     return rows[0]
       ? unseal<Connection>(rows[0].credential, this.c.encryptionKey)
       : null;
   }
-  async saveAccount(owner: string, a: Connection) {
+  async saveAccount(
+    owner: string,
+    a: Connection,
+    provider: OAuthProvider = 'strava',
+  ) {
     await this.request('integration_accounts?on_conflict=owner_id,provider', {
       method: 'POST',
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({
         owner_id: owner,
-        provider: 'strava',
+        provider,
         athlete_id: a.athleteId,
         credential: seal(a, this.c.encryptionKey),
       }),
     });
   }
-  async removeAccount(owner: string) {
+  async removeAccount(owner: string, provider: OAuthProvider = 'strava') {
     await this.request(
-      `integration_accounts?owner_id=eq.${encodeURIComponent(owner)}&provider=eq.strava`,
+      `integration_accounts?owner_id=eq.${encodeURIComponent(owner)}&provider=eq.${provider}`,
       { method: 'DELETE' },
     );
+  }
+  async readPolar(owner: string) {
+    const rows = (await this.request(
+      `integration_polar?owner_id=eq.${encodeURIComponent(owner)}&select=version,state`,
+    )) as { version: number; state: unknown }[];
+    return rows[0]
+      ? {
+          version: rows[0].version,
+          state: polarStoreSchema.parse(rows[0].state),
+        }
+      : { version: 0, state: emptyPolarStore() };
+  }
+  async savePolar(owner: string, base: number, state: PolarStore) {
+    const ok = await this.request('rpc/save_integration_polar', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_owner: owner,
+        p_version: base,
+        p_state: polarStoreSchema.parse(state),
+      }),
+    });
+    if (ok !== true)
+      throw new RepositoryError(
+        'Polar state changed; resume from fresh state.',
+      );
   }
   async ownerForAthlete(id: string) {
     const rows = (await this.request(
@@ -190,6 +233,9 @@ interface DevRecord {
   version: number;
   state: ActivityRegistry;
   account: Connection | null;
+  polarAccount?: Connection | null;
+  polar?: PolarStore;
+  polarVersion?: number;
   rich: Record<string, RichActivityData>;
   queue: { id: string; event: WebhookEvent; done: boolean }[];
 }
@@ -247,14 +293,42 @@ export class DevFileIntegrationRepository implements IntegrationRepository {
       state: registrySchema.parse(state),
     });
   }
-  async account(owner: string) {
-    return (await this.load(owner)).account;
+  async account(owner: string, provider: OAuthProvider = 'strava') {
+    const r = await this.load(owner);
+    return provider === 'polar' ? (r.polarAccount ?? null) : r.account;
   }
-  async saveAccount(owner: string, account: Connection) {
-    await this.write(owner, { ...(await this.load(owner)), account });
+  async saveAccount(
+    owner: string,
+    account: Connection,
+    provider: OAuthProvider = 'strava',
+  ) {
+    await this.write(owner, {
+      ...(await this.load(owner)),
+      [provider === 'polar' ? 'polarAccount' : 'account']: account,
+    });
   }
-  async removeAccount(owner: string) {
-    await this.write(owner, { ...(await this.load(owner)), account: null });
+  async removeAccount(owner: string, provider: OAuthProvider = 'strava') {
+    await this.write(owner, {
+      ...(await this.load(owner)),
+      [provider === 'polar' ? 'polarAccount' : 'account']: null,
+    });
+  }
+  async readPolar(owner: string) {
+    const r = await this.load(owner);
+    return {
+      version: r.polarVersion ?? 0,
+      state: polarStoreSchema.parse(r.polar ?? emptyPolarStore()),
+    };
+  }
+  async savePolar(owner: string, base: number, state: PolarStore) {
+    const r = await this.load(owner);
+    if ((r.polarVersion ?? 0) !== base)
+      throw new RepositoryError('Polar state changed. Retry.');
+    await this.write(owner, {
+      ...r,
+      polarVersion: base + 1,
+      polar: polarStoreSchema.parse(state),
+    });
   }
   async ownerForAthlete(id: string) {
     return (await this.account(DEV_OWNER))?.athleteId === id ? DEV_OWNER : null;

@@ -1,5 +1,47 @@
 # Decision log
 
+## 2026-10-04 — Polar Dynamic API v4 / real source boundaries
+
+Preserve de1091c and dormant Strava architecture. Polar uses current official v4 contract,
+centralized endpoints, seven justified read scopes and distinct owner-bound OAuth state.
+No profile/daily-activity/write scopes. Partial grants remain useful. No v3 user registration,
+invented session-ID endpoint, v3 webhooks or premium-subscription-as-notification shortcut.
+No current v4 notification/revocation endpoint is documented; manual sync and local token
+removal/manual Polar grant revocation are honest limitations.
+
+Use SUPABASE_SECRET_KEY as primary privileged key, apikey only; SERVICE_ROLE_KEY is deprecated
+fallback. Keep shared encrypted credential repository/auth/owner leases and CAS. Add separate
+versioned physiological state rather than touching local Gym keys/schema/history/exports.
+SQL is a draft, not remotely applied. Credentials/personal exports never become fixtures.
+
+V4 token response/minimal scopes provide no stable Polar athlete identity. Do not misuse jti,
+request profile PII or silently imply account verification. Bind encrypted credentials and
+source namespaces to app owner; source athleteId null; require an explicit own/same-account
+attestation at connection. Account switching cannot be detected/handled reliably and remains
+unsupported. This is documented prominently rather than claimed as provider identity security.
+
+Apply family-specific date windows; discover available sleep/PPI days before one-day detail
+hydration, store checkpoints after each window, cap UI batches at five and pace calls. 429
+backoff survives server restarts. Owner lease bounds token refresh/sync concurrency. This
+personal deployment has no distributed multi-owner client budget; add it before scaling.
+Do not infer global retention from empty responses. Unknown sport IDs remain other until
+catalog context and a re-sync resolve them. Matching policy stays the existing documented
+heuristic; one unique strong cross-provider candidate links, ambiguity requires review.
+
+Gym retains sets/exercises/effort and descriptive timing authority. Polar strength supplies
+physiological context only, never duplicate CompletedWorkouts. For future Strava copies,
+recorded Polar HR has narrow selection precedence over Strava HR, with field provenance;
+all other selected values remain stable. Sensor quality unknown means unknown, not watch
+or chest-strap certainty. Raw source revisions preserve disagreements/edits.
+
+Show underlying vendor RMSSD/RRI/respiration intervals with correct units, sleep components
+and quality; vendor scores/status/baselines remain secondary. Continuous HR, training HR,
+nightly metrics and PPI are separate contexts. No BPM-derived HRV or proprietary score.
+Real Recovery has no sample-filled gaps or sample recommendation; optional sample view is
+explicit. Descriptive means/maturity use real complete observations per metric/window with
+configurable 7/14/28 defaults that are not scientific validation. Analyze exposes real
+source/context, not AI inference. Home/Plan/Coach/Running analytical cards remain samples.
+
 ## 2026-10-04 — Stable dependencies and compatibility
 
 Next.js App Router, React, strict TypeScript, Tailwind v4, Recharts and Zod. Versions

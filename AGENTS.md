@@ -5,7 +5,7 @@
 Stillform is a Next.js App Router / React / strict TypeScript / Tailwind / Recharts
 application. Use pnpm and preserve its lockfile. Read `docs/PRODUCT_SPEC.md` and
 `docs/DECISIONS.md` before architectural changes. Supabase SQL is intended but
-unapplied. Strava OAuth, authenticated integration persistence and canonical activity sync are implemented server-side; live authorization/database verification require configuration. Polar/Calendar, physiological analytics and AI remain stubs.
+unapplied. Polar v4 and dormant Strava OAuth, authenticated persistence and canonical activity sync are implemented server-side; live authorization/database verification require configuration. Real Polar Recovery source display is implemented; Calendar, physiological decision analytics and AI remain stubs.
 Gym logging and descriptive analytics use confirmed real local data.
 
 ## Working practices

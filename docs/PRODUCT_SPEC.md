@@ -1,5 +1,34 @@
 # Product specification
 
+## Current milestone — Polar v4 real source data
+
+This section supersedes earlier statements that Polar is a stub. Strava remains dormant,
+not removed; credentials for it are unnecessary to use Polar. Browser Gym/Hevy data stays
+local and authoritative. Connecting does not import automatically. Secure Integrations
+offers explicit training/Recovery/all sync, date bounds, checkpoints, Continue, scopes,
+errors, empty windows and oldest/newest returned. Zero historical nights is success.
+
+Training uses shared canonical identity/matching: Polar strength can attach physiology to
+Gym without creating sets or CompletedWorkouts; future Strava copies attach another source.
+Weak/multiple matches require review. Missing HR/GPS is normal. Rich feature hydration is
+explicit from activity detail, and vendor Running Index/load is secondary. Polar availability
+is not complete running history. Unknown catalog IDs remain other, preserving source type.
+
+Recovery after connection displays a distinct real source view, including an honest empty
+state. The separate labelled sample view never fills real chart gaps. Real display includes
+nightly vendor RMSSD/RRI/respiration intervals, sleep duration/continuity/efficiency/timing,
+interruptions/phases, edits/completeness, device context, vendor comparisons and 7/28/90-day
+histories with Analyze. No custom Recovery state, recommendations or readiness percentage.
+UI maturity counts complete observations per metric/window; defaults 7/14/28 are configurable,
+not validated physiology. Missing/incomplete nights do not become synthesized baselines.
+Continuous daytime HR and PPI have separate server measurement contexts and count summaries.
+Sensor quality remains unknown; device identity alone proves no sensor type.
+
+Home/Plan/Coach and Running custom analytical cards remain labelled samples. Calendar,
+Consensus, personalized Recovery, drift/threshold/VO2 analytics and real AI are out of scope.
+See README for precise setup, current endpoints/scopes and API limits. Live verification and
+SQL migrations remain pending explicit user configuration; no personal fixtures are used.
+
 ## Principles
 
 Personal baselines, trends, independent evidence families, calibrated uncertainty

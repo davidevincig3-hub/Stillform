@@ -1,0 +1,290 @@
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+} from 'recharts';
+import {
+  recoverySeries,
+  windowSummary,
+  maturityPolicy,
+  type RecoveryData,
+  type RecoveryPoint,
+} from '@/analytics/polar-recovery';
+import { PageHeading } from './assessment';
+function RealMetric({
+  name,
+  unit,
+  context,
+  points,
+  asOf,
+}: {
+  name: string;
+  unit: string;
+  context: string;
+  points: RecoveryPoint[];
+  asOf: string;
+}) {
+  const [days, setDays] = useState(28),
+    [analyze, setAnalyze] = useState(false);
+  const s = windowSummary(points, days, asOf);
+  const latest = s.points.filter((p) => p.value !== null).at(-1);
+  return (
+    <section className="card">
+      <div className="section-heading">
+        <h3>{name}</h3>
+        <span className="tag">Real Polar data</span>
+      </div>
+      <p className="caption">{context}</p>
+      <strong>
+        {latest
+          ? `${latest.value!.toFixed(1)} ${unit} · ${latest.date}`
+          : 'Insufficient data'}
+      </strong>
+      <p className="caption">
+        {s.count} observations / {days} days · {s.completeCount} complete ·
+        baseline {s.maturity}
+      </p>
+      <div className="row start">
+        {[7, 28, 90].map((d) => (
+          <button
+            className="secondary"
+            aria-pressed={days === d}
+            key={d}
+            onClick={() => setDays(d)}
+          >
+            {d}d
+          </button>
+        ))}
+        <button className="secondary" onClick={() => setAnalyze((a) => !a)}>
+          Analyze {name}
+        </button>
+      </div>
+      {s.count > 0 && (
+        <div style={{ height: 220, width: '100%', minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={s.points}>
+              <XAxis
+                dataKey="date"
+                tickFormatter={(v) => v.slice(5)}
+                minTickGap={30}
+              />
+              <YAxis width={48} />
+              <Tooltip formatter={(v) => [`${v} ${unit}`, name]} />
+              <Line
+                dataKey="value"
+                type="linear"
+                stroke="var(--accent)"
+                dot={{ r: 3 }}
+                connectNulls={false}
+              />
+              {s.referenceMean !== null && (
+                <ReferenceLine
+                  y={s.referenceMean}
+                  strokeDasharray="4 4"
+                  label="Observed mean"
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      <p className="caption">
+        {s.referenceMean === null
+          ? 'Insufficient complete observations for a descriptive baseline.'
+          : 'Dashed line: mean of complete observations in this window; not a physiological threshold.'}
+      </p>
+      {analyze && (
+        <div className="notice">
+          <p>
+            {s.start} – {s.end} · {unit} · {Math.round(s.coverage * 100)}% day
+            coverage
+          </p>
+          <p>
+            {s.points
+              .filter((p) => p.value !== null)
+              .map(
+                (p) =>
+                  `${p.date}: ${p.value!.toFixed(1)} ${unit}${p.complete ? '' : ' (incomplete)'}`,
+              )
+              .join(' · ') || 'No real observations in this window.'}
+          </p>
+          <p>
+            Source: Polar · UI maturity defaults {maturityPolicy.preliminary}/
+            {maturityPolicy.developing}/{maturityPolicy.established} complete
+            observations. These defaults are configurable and not scientifically
+            validated. No AI or recovery decision computed.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+export function RealRecovery({ data }: { data: RecoveryData }) {
+  const latest = [...data.sleep]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .at(-1);
+  return (
+    <>
+      <PageHeading
+        title="Recovery source data."
+        subtitle="Real Polar observations. Personalized Recovery interpretation is not yet computed."
+      />
+      <section className="card">
+        <h2>{data.sleep.length} nights of sleep data</h2>
+        <p>
+          {data.nightly.length} Nightly Recharge dates ·{' '}
+          {data.connected
+            ? 'Polar connected'
+            : 'Disconnected · saved history retained'}
+        </p>
+        <p className="muted">
+          Missing nights are valid. Begin collecting a baseline prospectively by
+          wearing your device overnight. No sample values fill gaps.
+        </p>
+        <Link href="/integrations">Manage Polar sync →</Link>
+      </section>
+      <div className="section-heading">
+        <h2>Underlying nightly signals</h2>
+      </div>
+      <div className="two-grid">
+        {recoverySeries(data).map((s) => (
+          <RealMetric key={s.name} {...s} asOf={data.asOf} />
+        ))}
+      </div>
+      <section className="card">
+        <h2>Sleep timing & source quality</h2>
+        {latest ? (
+          <>
+            <p>
+              {latest.date} · {latest.start ?? 'Start unavailable'} →{' '}
+              {latest.end ?? 'End unavailable'}
+            </p>
+            <p>
+              {latest.interruptions ?? 'Unavailable'} interruptions ·{' '}
+              {latest.awakeSeconds ?? 'Unavailable'} s awake ·{' '}
+              {latest.userModified
+                ? 'User-modified sleep'
+                : 'No edit indicated'}{' '}
+              ·{' '}
+              {latest.complete
+                ? 'Complete normalized observation'
+                : 'Incomplete normalized observation'}
+            </p>
+            <p>Device: {latest.device ?? 'Unknown'} · sensor quality unknown</p>
+            <p>
+              Available phases:{' '}
+              {Object.entries(latest.phaseSeconds)
+                .map(([k, v]) => `${k}: ${v ?? 'unavailable'} s`)
+                .join(' · ') || 'Unavailable'}
+            </p>
+            {latest.vendorSleepScore !== null && (
+              <p className="caption">
+                Secondary vendor Sleep Score: {latest.vendorSleepScore}. Not the
+                application Recovery state.
+              </p>
+            )}
+          </>
+        ) : (
+          <p>Insufficient data · no real sleep nights available.</p>
+        )}
+      </section>
+      <details className="card">
+        <summary>Vendor Nightly Recharge context</summary>
+        {data.nightly.length ? (
+          data.nightly.slice(-28).map((n) => (
+            <p className="caption" key={n.date}>
+              {n.date}: {JSON.stringify(n.vendor)} · Polar vendor comparisons
+              only; not our Recovery verdict.
+            </p>
+          ))
+        ) : (
+          <p>No Nightly Recharge records available.</p>
+        )}
+      </details>
+      <section className="card">
+        <h3>Separate measurement contexts</h3>
+        <p>
+          {data.continuousDays} continuous-HR device-days · {data.ppiDays} PPI
+          days stored securely on the server. Day offsets retain unknown
+          timezone where absent. Continuous BPM is not nightly/resting HR or
+          HRV. PPI quality and recording context remain available for future
+          analytics.
+        </p>
+      </section>
+    </>
+  );
+}
+export function RecoveryMode({ sample }: { sample: React.ReactNode }) {
+  const [data, setData] = useState<RecoveryData | null>(null),
+    [message, setMessage] = useState(''),
+    [checking, setChecking] = useState(true),
+    [sampleView, setSampleView] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/polar/recovery', { cache: 'no-store' })
+      .then(async (r) => {
+        if (r.ok) {
+          const d = await r.json();
+          if (alive) setData(d);
+        } else if (r.status !== 401 && r.status !== 503) {
+          if (alive)
+            setMessage(
+              'Real Recovery data unavailable; reconnect or check integration setup.',
+            );
+        }
+      })
+      .catch(() => {
+        if (alive) setMessage('Real Recovery data unavailable.');
+      })
+      .finally(() => {
+        if (alive) setChecking(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (checking)
+    return (
+      <PageHeading
+        title="Recovery source data."
+        subtitle="Checking real-data availability…"
+      />
+    );
+  return (
+    <>
+      {data?.realMode ? (
+        <>
+          <div className="row start">
+            <span className="tag">
+              {sampleView ? 'Explicit sample view' : 'REAL POLAR SOURCE DATA'}
+            </span>
+            <button
+              className="secondary"
+              onClick={() => setSampleView((v) => !v)}
+            >
+              {sampleView ? 'Show real data' : 'Show labelled sample view'}
+            </button>
+          </div>
+          {sampleView ? sample : <RealRecovery data={data} />}
+        </>
+      ) : (
+        <>
+          {message && <p role="status">{message}</p>}
+          {sample}
+          <p className="notice">
+            This is the sample view.{' '}
+            <Link href="/integrations">Connect Polar</Link> for separate real
+            Recovery source data. No personal recovery engine is computed.
+          </p>
+        </>
+      )}
+    </>
+  );
+}

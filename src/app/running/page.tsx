@@ -71,9 +71,10 @@ export default function Running() {
       <details className="card">
         <summary>Secondary vendor signals · Polar Running Index</summary>
         <p className="muted">
-          Not connected. No Running Index value is available. A future vendor
-          signal will complement comparable-session evidence, with source and
-          confidence preserved.
+          Real Polar Running Index and training-load fields, when returned, are
+          available in each enriched activity detail below. They remain
+          secondary vendor signals; these sample analytical cards do not use
+          them.
         </p>
       </details>
       <MetricChart metric="Running minutes" />

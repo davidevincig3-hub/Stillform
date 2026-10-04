@@ -11,6 +11,11 @@ import type {
 import type { Connection } from '../../src/server/strava-client';
 import { fingerprint } from '../../src/server/integration-security';
 import { integrationConfig } from '../../src/server/integration-config';
+import {
+  emptyPolarStore,
+  polarStoreSchema,
+  type PolarStore,
+} from '../../src/domain/polar';
 export const config = integrationConfig({
   NODE_ENV: 'test',
   APP_ORIGIN: 'http://localhost:3100',
@@ -41,6 +46,9 @@ export function activityRaw(id = 1, type = 'Run') {
   };
 }
 export class MemoryRepository implements IntegrationRepository {
+  polarState = emptyPolarStore();
+  polarVersion = 0;
+  polarCredential: Connection | null = null;
   state = emptyRegistry();
   version = 0;
   credential: Connection | null = { ...connection };
@@ -56,15 +64,35 @@ export class MemoryRepository implements IntegrationRepository {
     this.state = registrySchema.parse(structuredClone(state));
     this.version++;
   }
-  async account() {
-    return this.credential;
+  async account(_owner?: string, provider: 'strava' | 'polar' = 'strava') {
+    return provider === 'polar' ? this.polarCredential : this.credential;
   }
-  async saveAccount(_owner: string, c: Connection) {
-    this.credential = c;
+  async saveAccount(
+    _owner: string,
+    c: Connection,
+    provider: 'strava' | 'polar' = 'strava',
+  ) {
+    if (provider === 'polar') this.polarCredential = c;
+    else this.credential = c;
     this.saves.push(c);
   }
-  async removeAccount() {
-    this.credential = null;
+  async removeAccount(
+    _owner?: string,
+    provider: 'strava' | 'polar' = 'strava',
+  ) {
+    if (provider === 'polar') this.polarCredential = null;
+    else this.credential = null;
+  }
+  async readPolar() {
+    return {
+      version: this.polarVersion,
+      state: structuredClone(this.polarState),
+    };
+  }
+  async savePolar(_owner: string, base: number, state: PolarStore) {
+    if (base !== this.polarVersion) throw new Error('CAS conflict');
+    this.polarState = polarStoreSchema.parse(structuredClone(state));
+    this.polarVersion++;
   }
   async ownerForAthlete(id: string) {
     return id === this.credential?.athleteId ? 'owner' : null;

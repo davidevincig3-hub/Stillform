@@ -15,6 +15,9 @@ export interface IntegrationConfig {
   supabaseUrl: string;
   supabaseKey: string;
   serviceKey: string;
+  secretKey: string;
+  polarClientId: string;
+  polarClientSecret: string;
   devAccessKey: string;
   webhookToken: string;
   subscriptionId: number;
@@ -52,22 +55,33 @@ export function integrationConfig(
     supabaseUrl: env.SUPABASE_URL || '',
     supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || '',
     serviceKey: env.SUPABASE_SERVICE_ROLE_KEY || '',
+    secretKey: env.SUPABASE_SECRET_KEY || '',
+    polarClientId: env.POLAR_CLIENT_ID || '',
+    polarClientSecret: env.POLAR_CLIENT_SECRET || '',
     devAccessKey: env.DEV_INTEGRATION_ACCESS_KEY || '',
     webhookToken: env.STRAVA_WEBHOOK_VERIFY_TOKEN || '',
     subscriptionId: Number(env.STRAVA_WEBHOOK_SUBSCRIPTION_ID || 0),
   };
 }
-export function missingConfiguration(c: IntegrationConfig) {
+export function missingConfiguration(
+  c: IntegrationConfig,
+  provider: 'strava' | 'polar' | 'shared' = 'strava',
+) {
   const missing: string[] = [];
   if (!/^[a-f\d]{64}$/i.test(c.encryptionKey))
     missing.push('INTEGRATION_ENCRYPTION_KEY (64 hex characters)');
   if (c.mode === 'supabase') {
     if (!c.supabaseUrl) missing.push('SUPABASE_URL');
     if (!c.supabaseKey) missing.push('SUPABASE_PUBLISHABLE_KEY');
-    if (!c.serviceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+    if (!c.secretKey && !c.serviceKey) missing.push('SUPABASE_SECRET_KEY');
   } else if (c.devAccessKey.length < 32)
     missing.push('DEV_INTEGRATION_ACCESS_KEY (at least 32 characters)');
-  if (!c.clientId) missing.push('STRAVA_CLIENT_ID');
-  if (!c.clientSecret) missing.push('STRAVA_CLIENT_SECRET');
+  if (provider === 'strava') {
+    if (!c.clientId) missing.push('STRAVA_CLIENT_ID');
+    if (!c.clientSecret) missing.push('STRAVA_CLIENT_SECRET');
+  } else if (provider === 'polar') {
+    if (!c.polarClientId) missing.push('POLAR_CLIENT_ID');
+    if (!c.polarClientSecret) missing.push('POLAR_CLIENT_SECRET');
+  }
   return missing;
 }

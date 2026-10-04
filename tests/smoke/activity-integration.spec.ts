@@ -218,6 +218,8 @@ test('production browser bundles contain no server integration secrets/configura
     const body = await readFile(path, 'utf8');
     for (const variable of [
       'STRAVA_CLIENT_SECRET',
+      'POLAR_CLIENT_SECRET',
+      'SUPABASE_SECRET_KEY',
       'SUPABASE_SERVICE_ROLE_KEY',
       'INTEGRATION_ENCRYPTION_KEY',
       'DEV_INTEGRATION_ACCESS_KEY',

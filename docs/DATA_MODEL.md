@@ -1,5 +1,48 @@
 # Data model
 
+## Polar source storage version 1 (current extension)
+
+Canonical registry version 1 and Gym v2/revision 2 are unchanged. `PolarStore` is a separate
+server-only owner-keyed version-1 blob with realMode, jobs, sleep/nightly/continuous/PPI arrays,
+device/catalog context, request timestamps and persistent backoff. Old encrypted dev records
+without this state decode an empty store; missing Polar credentials decode null. SQL 0005 adds
+integration_polar and a service-only CAS RPC. No browser-local Gym migration is triggered.
+
+Jobs retain requested from/to (inclusive/exclusive), next discovery date, phase, available-date
+detail queue, done/unavailable flags, request count, empty windows, oldest/newest returned,
+last successful timestamp and curated errors. Zero records remains valid completed discovery.
+
+All physiological records preserve real Polar provenance, date/device, sync timestamp, raw
+snapshot, previous revisions and unknown sensor quality. Sleep normalizes source start/end,
+seconds asleep/span/awake/phases, interruptions, continuity, efficiency, vendor Sleep Score,
+user-modified marker and completeness. Detailed offset/trim/original structures stay raw;
+UI timing is source timing, not a new sleep-regularity calculation. Missing values are null.
+Nightly stores vendor RMSSD/RRI/respiration intervals in milliseconds and vendor baseline/status
+fields. No conversion to mean night HR, invented respiration rate or proprietary Recovery state.
+Continuous HR retains local date + offsetMillis, nullable absolute timestamp, BPM, device and
+trigger. PPI stores interval/errorEstimate milliseconds, offset, skin contact/movement/offline,
+device and trigger changes. Unknown sample timezone is explicit; no HRV is derived from BPM.
+
+Polar permanent training identifier becomes an ExternalActivitySource under the authenticated
+owner namespace. athleteId is null because no provider stable identity is documented in the
+minimal token response. The encrypted account's shared athleteId field holds an owner binding,
+never a claimed Polar athlete ID. Naive training start uses provider timezoneOffsetMinutes;
+already-offset timestamps are interpreted once. Missing naive timezone blocks ingestion.
+Sports resolve through the real catalog, unknown types stay other. There are no fabricated
+device sensor assumptions. Normalized fingerprints/previous raw structures preserve changes.
+
+RichActivityData optionally contains PolarFeatures: per-exercise vendor Running Index/load,
+sample types/values/intervals/units, zones, pauses, routes and statistics, plus raw session.
+HR units are bpm; unsupported speed sample units stay provider_unspecified. Provider laps
+normalize milliseconds to seconds, distance and HR, preserving manual/automatic/exercise
+context in raw records. Strength-training vendor results remain raw; never become Gym sets.
+
+Field provenance is retained. Recorded Polar HR can supersede selected Strava HR; other
+nonnull canonical values remain selected. Source updates change only their selected fields.
+Gym/Hevy exercises/load/reps/effort/routines are authoritative and not mutated by Polar sync.
+UI maturity uses only real complete metric observations, not vendor baseline maturity or
+sample counts. Defaults/limitations are documented in README and analytics/polar-recovery.ts.
+
 ## Four layers
 
 1. Raw: source/external identifier, recording/reception timestamps, quality and

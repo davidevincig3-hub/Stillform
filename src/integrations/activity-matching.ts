@@ -72,7 +72,7 @@ export function attachSource(
   source.activityId = target.id;
   if (!target.sourceKeys.includes(source.key))
     target.sourceKeys.push(source.key);
-  // Existing selected values retain their provider; new sources supply only absent fields.
+  // Preserve selection, except recorded Polar HR supersedes Strava HR. Gym fields stay authoritative.
   for (const field of [
     'elapsedSeconds',
     'movingSeconds',
@@ -85,7 +85,13 @@ export function attachSource(
     'timeZone',
     'localStart',
   ] as const)
-    if (target[field] === null && incoming[field] !== null) {
+    if (
+      incoming[field] !== null &&
+      (target[field] === null ||
+        (source.provider === 'polar' &&
+          ['averageHr', 'maxHr'].includes(field) &&
+          target.fieldSources[field]?.startsWith('strava:')))
+    ) {
       Object.assign(target, { [field]: incoming[field] });
       target.fieldSources[field] = incoming.fieldSources[field] ?? source.key;
     }
@@ -156,13 +162,13 @@ export function registerGymLinks(
       previous: [],
     });
   }
-  // A previously unmatched Strava shell can be reviewed when Gym summaries arrive later.
+  // A previously unmatched provider shell can be reviewed when Gym summaries arrive later.
   for (const a of registry.activities.filter(
     (a) =>
       a.sport === 'strength' && !a.gymWorkoutId && a.status === 'confirmed',
   )) {
     const source = registry.sources.find(
-      (s) => s.activityId === a.id && s.provider === 'strava',
+      (s) => s.activityId === a.id && ['strava', 'polar'].includes(s.provider),
     );
     if (!source || registry.decisions[source.key]) continue;
     const candidates = matchCandidates(
@@ -186,12 +192,15 @@ export function ingestActivity(
 ): 'new' | 'linked' | 'review' | 'existing' {
   const old = registry.sources.find((s) => s.key === source.key);
   if (old) {
+    const normalizedTypeChanged = old.providerType !== source.providerType;
     old.syncedAt = source.syncedAt;
     old.providerType = source.providerType;
-    if (old.fingerprint !== source.fingerprint) {
-      old.previous.push(old.raw);
-      old.raw = source.raw;
-      old.fingerprint = source.fingerprint;
+    if (old.fingerprint !== source.fingerprint || normalizedTypeChanged) {
+      if (old.fingerprint !== source.fingerprint) {
+        old.previous.push(old.raw);
+        old.raw = source.raw;
+        old.fingerprint = source.fingerprint;
+      }
       old.syncedAt = source.syncedAt;
       if (source.device !== null) old.device = source.device;
       old.deleted = false;
