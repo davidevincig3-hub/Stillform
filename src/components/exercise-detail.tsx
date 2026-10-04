@@ -28,7 +28,7 @@ export function ExerciseDetail({ id }: { id: string }) {
       </Link>
       <PageHeading
         title={exercise.name}
-        subtitle={`${exercise.primaryMuscleGroup} · ${exercise.equipment ?? 'Equipment unspecified'} · Real exposure history`}
+        subtitle={`${exercise.primaryMuscleGroup ?? 'Unassigned'} · ${exercise.equipment ?? 'Equipment unspecified'} · Real exposure history`}
       />
       {!exposures.length ? (
         <section className="card">

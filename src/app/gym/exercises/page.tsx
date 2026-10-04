@@ -43,7 +43,7 @@ export default function ExerciseLibrary() {
                 <h3>{e.name}</h3>
               </Link>
               <p className="caption">
-                {e.primaryMuscleGroup} ·{' '}
+                {e.primaryMuscleGroup ?? 'Unassigned'} ·{' '}
                 {e.equipment || 'Equipment unspecified'} ·{' '}
                 {e.custom ? 'Custom' : 'Built-in'}
               </p>
@@ -85,7 +85,7 @@ function ExerciseForm({
           const exercise: Exercise = {
             id: initial?.id ?? crypto.randomUUID(),
             name: String(data.get('name')),
-            primaryMuscleGroup: String(data.get('muscle')),
+            primaryMuscleGroup: String(data.get('muscle') ?? '').trim() || null,
             secondaryMuscleGroups: String(data.get('secondary') ?? '')
               .split(',')
               .map((x) => x.trim())
@@ -115,10 +115,13 @@ function ExerciseForm({
       <input
         id="custom-muscle"
         name="muscle"
-        required
+        placeholder="Unassigned"
         maxLength={60}
-        defaultValue={initial?.primaryMuscleGroup}
+        defaultValue={initial?.primaryMuscleGroup ?? ''}
       />
+      <p className="caption">
+        Optional. Leave blank to keep muscle metadata Unassigned.
+      </p>
       <label htmlFor="custom-secondary">
         Secondary groups · optional, comma separated
       </label>
@@ -133,14 +136,14 @@ function ExerciseForm({
         id="custom-equipment"
         name="equipment"
         maxLength={80}
-        defaultValue={initial?.equipment}
+        defaultValue={initial?.equipment ?? ''}
       />
       <label htmlFor="custom-category">Category · optional</label>
       <input
         id="custom-category"
         name="category"
         maxLength={80}
-        defaultValue={initial?.category}
+        defaultValue={initial?.category ?? ''}
       />
       {error && (
         <p className="notice" role="alert">

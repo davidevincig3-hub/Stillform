@@ -41,7 +41,7 @@ export function HevyImportControls() {
       custom: {
         id,
         name: m.incomingName,
-        primaryMuscleGroup: 'Unassigned',
+        primaryMuscleGroup: null,
         secondaryMuscleGroups: [],
         custom: true,
       },
@@ -221,7 +221,7 @@ export function HevyImportControls() {
                         .filter((e) => e.id !== m.custom?.id)
                         .map((e) => (
                           <option key={e.id} value={e.id}>
-                            {e.name} · {e.primaryMuscleGroup}
+                            {e.name} · {e.primaryMuscleGroup ?? 'Unassigned'}
                           </option>
                         ))}
                     </select>
@@ -254,13 +254,16 @@ export function HevyImportControls() {
                         Primary muscle group
                         <input
                           aria-label={`Muscle ${m.incomingName}`}
-                          value={m.custom.primaryMuscleGroup}
+                          placeholder="Unassigned"
+                          value={m.custom.primaryMuscleGroup ?? ''}
                           onChange={(e) =>
                             change({
                               ...m,
                               custom: {
                                 ...m.custom!,
-                                primaryMuscleGroup: e.target.value,
+                                primaryMuscleGroup: e.target.value.trim()
+                                  ? e.target.value
+                                  : null,
                               },
                             })
                           }

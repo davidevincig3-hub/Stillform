@@ -44,7 +44,7 @@ Gym logging and descriptive analytics use confirmed real local data.
 ## Gym persistence
 
 Current Gym domain is `src/domain/gym.ts`; storage uses `adaptive-coach.gym.v2`
-(version 2, schemaRevision 1). Retain legacy V1 decoder and tests. Old unmarked records require review
+(version 2, schemaRevision 2). Retain legacy V1 decoder and tests. Old unmarked records require review
 before entering personal history; discard all sample previous-performance strings.
 Real queries filter completed confirmed-user origin and use stable exercise IDs.
 Preserve routine/exercise snapshots, JSON formatVersion 1 and CSV export safety.

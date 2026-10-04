@@ -1,13 +1,31 @@
 import { z } from 'zod';
 import { setSchema } from './models';
 
+// Missing anatomical metadata is null, never a fabricated muscle-group name.
+export const primaryMuscleGroupSchema = z.preprocess(
+  (value) =>
+    typeof value === 'string' &&
+    (!value.trim() || value.trim().toLowerCase() === 'unassigned')
+      ? null
+      : value,
+  z.string().trim().min(1).max(60).nullable().default(null),
+);
+const secondaryMuscleGroupsSchema = z.preprocess(
+  (value) => (value == null ? [] : value),
+  z.array(z.string().min(1)).default([]),
+);
+const optionalMetadata = z.preprocess(
+  (value) => (typeof value === 'string' && !value.trim() ? null : value),
+  z.string().trim().max(80).nullish(),
+);
+
 export const libraryExerciseSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(120),
-  primaryMuscleGroup: z.string().trim().min(1).max(60),
-  secondaryMuscleGroups: z.array(z.string().min(1)).default([]),
-  equipment: z.string().max(80).optional(),
-  category: z.string().max(80).optional(),
+  primaryMuscleGroup: primaryMuscleGroupSchema,
+  secondaryMuscleGroups: secondaryMuscleGroupsSchema,
+  equipment: optionalMetadata,
+  category: optionalMetadata,
   custom: z.boolean(),
 });
 export type Exercise = z.infer<typeof libraryExerciseSchema>;
@@ -49,9 +67,9 @@ export const gymWorkoutExerciseSchema = z.object({
   id: z.string(),
   exerciseId: z.string(),
   name: z.string(),
-  primaryMuscleGroup: z.string(),
-  secondaryMuscleGroups: z.array(z.string()),
-  equipment: z.string().optional(),
+  primaryMuscleGroup: primaryMuscleGroupSchema,
+  secondaryMuscleGroups: secondaryMuscleGroupsSchema,
+  equipment: optionalMetadata,
   notes: z.string(),
   repRange: routineExerciseSchema.shape.repRange,
   sourceName: z.string().optional(),

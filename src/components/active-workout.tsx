@@ -93,7 +93,7 @@ export function ActiveWorkoutScreen() {
             <div>
               <h2>{e.name}</h2>
               <p className="caption">
-                {e.primaryMuscleGroup}
+                {e.primaryMuscleGroup ?? 'Unassigned'}
                 {e.repRange
                   ? ` · ${e.repRange.min}–${e.repRange.max} reps`
                   : ''}

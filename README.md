@@ -139,7 +139,7 @@ Unknown/ambiguous/nonexistent timestamps and invalid fields block the entire imp
 No RIR is inferred. RPE 10 is not failure unless set_type explicitly says failure.
 Missing load stays unrecorded; zero load is valid. Timed/distance sets are preserved.
 
-Store v2 schemaRevision=1 adds default-empty mapping rules/import batch summaries
+Store v2 schemaRevision=2 includes default-empty mapping rules/import batch summaries
 and optional imported fields; older v2 and V1 data remain compatible. JSON and CSV
 exports retain import provenance and source set context. Export a JSON backup first.
 Source files belong only in ignored local-imports/; do not commit personal exports.

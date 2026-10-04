@@ -44,6 +44,7 @@ export function weeklyGymSummary(workouts: GymWorkout[], now = new Date()) {
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
   const muscles = new Map<string, { sets: number; workouts: Set<string> }>();
+  const unassigned = { sets: 0, workouts: new Set<string>() };
   const effort = {
     rir: [] as number[],
     rpe: [] as number[],
@@ -60,13 +61,17 @@ export function weeklyGymSummary(workouts: GymWorkout[], now = new Date()) {
     for (const e of w.exercises) {
       const sets = e.sets.filter((s) => s.completed);
       if (!sets.length) continue;
-      const group = muscles.get(e.primaryMuscleGroup) ?? {
-        sets: 0,
-        workouts: new Set<string>(),
-      };
+      const group =
+        e.primaryMuscleGroup === null
+          ? unassigned
+          : (muscles.get(e.primaryMuscleGroup) ?? {
+              sets: 0,
+              workouts: new Set<string>(),
+            });
       group.sets += sets.length;
       group.workouts.add(w.id);
-      muscles.set(e.primaryMuscleGroup, group);
+      if (e.primaryMuscleGroup !== null)
+        muscles.set(e.primaryMuscleGroup, group);
       for (const s of sets) {
         effort.total++;
         if (s.rir !== null) effort.rir.push(s.rir);
@@ -84,5 +89,6 @@ export function weeklyGymSummary(workouts: GymWorkout[], now = new Date()) {
       frequency: data.workouts.size,
     })),
     effort,
+    unassigned: { sets: unassigned.sets, frequency: unassigned.workouts.size },
   };
 }

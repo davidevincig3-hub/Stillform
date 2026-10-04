@@ -113,4 +113,4 @@ comparisons, not history inclusion. All completed types count in descriptive set
 totals; avoid interpreting these totals as equivalent hypertrophy stimulus.
 CSV source timezone is explicitly reviewed; default Europe/Rome. Repeated source
 indices are warned and preserved in separate blocks. Missing anatomical metadata
-remains an explicit Unassigned group. Full superset programming is not implemented.
+is represented as null and reported separately as Unassigned. Full superset programming is not implemented.

@@ -276,3 +276,68 @@ test('storage failure never leaves a partial imported batch', async ({
     page.getByRole('heading', { name: 'Import complete' }),
   ).toHaveCount(0);
 });
+
+test('bulk custom import accepts blank muscle metadata through confirmation and reload', async ({
+  page,
+}) => {
+  await page.goto('/gym');
+  await page.getByText('Backup, export & Hevy import', { exact: true }).click();
+  await page.getByLabel('Select Hevy CSV').setInputFiles({
+    name: 'synthetic-null.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(csv),
+  });
+  await page
+    .getByRole('button', {
+      name: 'Prepare custom exercises for all unresolved names',
+    })
+    .click();
+  await expect(page.getByLabel('Muscle Synthetic press')).toHaveAttribute(
+    'placeholder',
+    'Unassigned',
+  );
+  await page.getByLabel('Muscle Synthetic press').fill('');
+  await page.getByRole('button', { name: 'Review import summary' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Confirm import', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/source names map to Unassigned muscle metadata/),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => localStorage.getItem('adaptive-coach.gym.v2')),
+  ).toBeNull();
+  await page
+    .getByLabel('I reviewed timezone, mappings, duplicates and warnings')
+    .check();
+  await page
+    .getByRole('button', { name: 'Confirm and import Hevy history' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Import complete' }),
+  ).toBeVisible();
+  await page.reload();
+  const id = await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('adaptive-coach.gym.v2')!);
+    const e = s.exercises.find((x: { custom: boolean }) => x.custom);
+    if (
+      e.primaryMuscleGroup !== null ||
+      s.history[0].exercises[0].primaryMuscleGroup !== null
+    )
+      throw new Error('Metadata must stay null');
+    return e.id as string;
+  });
+  await page.goto(`/gym/exercises/${id}`);
+  await expect(
+    page.getByText(/Unassigned · Equipment unspecified/),
+  ).toBeVisible();
+  await expect(
+    page.getByText('80 kg × 10 · 9 RPE · superset 1', { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('link', { name: 'Synthetic imported session →' })
+    .click();
+  await expect(
+    page.getByText('Unassigned · Controlled', { exact: true }),
+  ).toBeVisible();
+});

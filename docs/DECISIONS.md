@@ -100,3 +100,15 @@ One validated localStorage replacement commits workouts/library/mappings/batch s
 Require explicit approval and unchanged preview state; stale raw storage also blocks
 writes. Additive v2 schemaRevision 1 defaults preserve previous v2/V1 compatibility
 and full JSON export format 1. No backend, real AI or physiological calculations.
+
+## 2026-10-04 — Canonical unassigned exercise metadata
+
+Use null for primary muscle metadata, not a fake muscle label. Empty inputs and the
+older Unassigned marker normalize to null in shared library/workout schemas. Preserve
+valid assigned names; absent secondary groups become [], absent equipment/category
+are allowed. Store v2 revision 2 accepts revision 1/missing revisions and normalizes
+on read; the same storage key, legacy isolation and backup format remain intact.
+Normalize library metadata before import snapshots/warnings and validate again at
+atomic confirmation. Keep unassigned sets/sessions separate from named muscle totals
+without excluding their history, actual performance or effort information. UI labels
+and optional fields expose this state. SQL 0003 is an unapplied alignment draft.

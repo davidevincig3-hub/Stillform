@@ -59,7 +59,7 @@ export function WorkoutDetail({ id }: { id: string }) {
             </h2>
           </Link>
           <p className="caption">
-            {e.primaryMuscleGroup} · {e.notes}
+            {e.primaryMuscleGroup ?? 'Unassigned'} · {e.notes}
           </p>
           {e.sourceName && (
             <p className="caption">Hevy exercise: {e.sourceName}</p>

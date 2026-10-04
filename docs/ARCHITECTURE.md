@@ -62,7 +62,7 @@ preserved. Unknown origin is isolated from real queries until review. Routine ed
 do not mutate active/history snapshots. Custom exercise renames keep their IDs;
 historical names/muscle groups stay as logged. The future SQL adapter will map
 library IDs via library_key and soft-delete routines to preserve relational links.
-Both SQL migrations remain unapplied and require database testing.
+All SQL migrations remain unapplied and require database testing.
 
 Browser tests use port 3100 with no server reuse, preventing stale previews from
 passing tests. The development indicator stays visible in the top-right with mobile
@@ -86,7 +86,7 @@ No raw CSV, filename or preview is persisted; normalized source values required 
 history/provenance are persisted only after confirmation. An opt-in local reference
 verification builds plans in memory and prints aggregate metadata, never source rows.
 
-v2/schemaRevision 1 is an additive extension with defaults for older stores. No old
+v2/schemaRevision 2 is a compatible metadata extension with defaults for older stores. No old
 key is deleted or rewritten. JSON formatVersion 1 retains the full validated extended
 store. Future SQL adapters must preserve nullable reps/timing, source order/context,
 fingerprints, mappings and batches; existing SQL migrations are still unapplied.

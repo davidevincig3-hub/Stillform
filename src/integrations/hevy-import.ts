@@ -1,4 +1,8 @@
-import type { Exercise, GymWorkout } from '../domain/gym';
+import {
+  libraryExerciseSchema,
+  type Exercise,
+  type GymWorkout,
+} from '../domain/gym';
 import { gymStoreSchema, type GymStore } from '../repositories/gym-storage';
 export const hevyColumns = [
   'title',
@@ -431,7 +435,7 @@ export function buildHevyPlan(
   )
     throw new Error('Resolve every exercise mapping');
   const batchId = crypto.randomUUID(),
-    exercises = [...store.exercises],
+    exercises = store.exercises.map((e) => libraryExerciseSchema.parse(e)),
     lookup = new Map<string, Exercise>();
   for (const m of mappings) {
     if (
@@ -441,7 +445,7 @@ export function buildHevyPlan(
       m.custom.custom &&
       !exercises.some((e) => e.id === m.custom!.id)
     )
-      exercises.push(m.custom);
+      exercises.push(libraryExerciseSchema.parse(m.custom));
   }
   for (const name of parsed.names) {
     const mapping = mappings.find((m) => m.incomingName === name)!;
@@ -453,7 +457,7 @@ export function buildHevyPlan(
       mapping.custom.id === mapping.exerciseId &&
       mapping.custom.custom
     ) {
-      exercise = mapping.custom;
+      exercise = libraryExerciseSchema.parse(mapping.custom);
       exercises.push(exercise);
     }
     if (!exercise) throw new Error('Mapping references an unknown exercise');
@@ -547,11 +551,11 @@ export function buildHevyPlan(
   }
   const warnings = [...parsed.warnings],
     unknown = [...lookup.values()].filter(
-      (e) => e.primaryMuscleGroup === 'Unassigned',
+      (e) => e.primaryMuscleGroup === null,
     ).length;
   if (unknown)
     warnings.push(
-      `${unknown} source names map to Unassigned muscle metadata; totals remain in an explicit Unassigned group.`,
+      `${unknown} source names map to Unassigned muscle metadata; these sets are reported separately from muscle-group totals.`,
     );
   const summary = {
     workouts: workouts.length,

@@ -20,7 +20,8 @@ export function GymAnalytics() {
           </p>
           {!summary.muscles.length ? (
             <p className="muted">
-              Insufficient data: no completed sets this week.
+              Insufficient data: no completed sets with assigned muscle metadata
+              this week.
             </p>
           ) : (
             summary.muscles.map((m) => (
@@ -31,6 +32,13 @@ export function GymAnalytics() {
                 </strong>
               </div>
             ))
+          )}
+          {summary.unassigned.sets > 0 && (
+            <p className="caption">
+              Unassigned: {summary.unassigned.sets} sets ·{' '}
+              {summary.unassigned.frequency} sessions. Excluded from
+              muscle-group totals.
+            </p>
           )}
         </section>
         <section className="card">

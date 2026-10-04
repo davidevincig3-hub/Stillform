@@ -214,7 +214,7 @@ function RoutineForm({ initial }: { initial?: GymRoutine }) {
             >
               {store.exercises.map((e) => (
                 <option value={e.id} key={e.id}>
-                  {e.name} · {e.primaryMuscleGroup}
+                  {e.name} · {e.primaryMuscleGroup ?? 'Unassigned'}
                   {e.custom ? ' · custom' : ''}
                 </option>
               ))}

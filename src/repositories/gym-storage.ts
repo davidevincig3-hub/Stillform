@@ -19,7 +19,10 @@ export const gymStorageKey = 'adaptive-coach.gym.v2';
 export const gymStoreSchema = z
   .object({
     version: z.literal(2),
-    schemaRevision: z.literal(1).default(1),
+    schemaRevision: z
+      .union([z.literal(1), z.literal(2)])
+      .default(2)
+      .transform(() => 2 as const),
     exercises: z.array(libraryExerciseSchema),
     routines: z.array(gymRoutineSchema),
     active: gymWorkoutSchema.nullable(),
@@ -88,7 +91,7 @@ export type GymStore = z.infer<typeof gymStoreSchema>;
 export function initialGymStore(): GymStore {
   return {
     version: 2,
-    schemaRevision: 1,
+    schemaRevision: 2,
     exercises: structuredClone(builtInExercises),
     routines: [],
     active: null,
@@ -133,7 +136,7 @@ export function migrateLegacyStore(raw: string): GymStore {
           match = {
             id: `legacy-${e.id}`,
             name: e.name,
-            primaryMuscleGroup: e.muscleGroup || 'Unassigned',
+            primaryMuscleGroup: e.muscleGroup || null,
             secondaryMuscleGroups: [],
             custom: true,
           };

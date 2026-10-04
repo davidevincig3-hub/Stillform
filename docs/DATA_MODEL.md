@@ -89,7 +89,7 @@ false) from confirmed completed workouts; names/notes are quoted, formulas escap
 units kg, timestamps ISO. CSV cannot reconstruct the full routine/library graph.
 Restore requires a future validated preview/migration/confirmation workflow.
 
-## Hevy CSV v1 / store v2 schemaRevision 1
+## Hevy CSV v1 / store v2 schemaRevision 2
 
 Verified columns: title, start_time, end_time, description, exercise_title,
 superset_id, exercise_notes, set_index, set_type, weight_kg, reps, distance_km,
@@ -126,8 +126,18 @@ identical grouping metadata cannot be distinguished; correct such source data fi
 hevyMappings stores exact source name → confirmed canonical ID. No case/fuzzy/synonym
 merge is implicit. Several names can share one ID by user choice. importBatches records
 ID, timestamp, source, zone, workout/set/custom counts, duplicate skips and warnings.
-Both fields default empty when old v2 stores are decoded; schemaRevision defaults to 1.
+Both fields default empty when old v2 stores are decoded; schemaRevision defaults to 2 (revision 1 is migrated on read).
 Old V1 isolation remains unchanged. Full JSON backups retain all fields; CSV adds
 source-name/type/index/order/notes, distance/duration/superset, fingerprint/batch fields.
 Muscle metadata is snapshotted; future metadata backfill needs a separate reviewed
 operation. Null load is not automatically bodyweight for imported sets.
+
+Nullable Gym metadata fix: primary muscle group is canonically null when unassigned;
+the UI displays Unassigned and fields may remain blank. Secondary groups may be
+absent (canonical []); equipment/category accept absence/null. Decoder revision 2
+normalizes older Unassigned/blank markers and revision-1 stores without losing
+history. Assigned values retain their identity. Import planning normalizes metadata
+before building snapshots/warnings, and atomic confirmation revalidates it.
+Unassigned sets/sessions are reported separately from named muscle totals; their
+history, load/reps, previous performances and effort remain available. The new SQL
+alignment migration is unapplied, as are the existing migrations.
