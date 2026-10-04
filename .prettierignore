@@ -1,0 +1,7 @@
+.next
+node_modules
+.pnpm-store
+pnpm-lock.yaml
+test-results
+playwright-report
+next-env.d.ts

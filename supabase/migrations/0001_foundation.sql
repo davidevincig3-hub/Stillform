@@ -1,0 +1,49 @@
+-- Intended Supabase schema; not applied by the local demo.
+-- Every user-owned row has RLS. Apply via Supabase migrations after auth integration.
+create extension if not exists pgcrypto;
+create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, timezone text not null default 'UTC', created_at timestamptz not null default now());
+create table public.raw_records (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), source text not null, external_id text not null, recorded_at timestamptz, received_at timestamptz not null default now(), payload jsonb not null, unique(user_id,source,external_id));
+create table public.activities (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), type text not null check (type in ('running','strength','cycling','swimming','hiking','other')), title text not null, started_at timestamptz not null, duration_minutes numeric check(duration_minutes >= 0), distance_km numeric, canonical_values jsonb not null default '{}');
+create table public.activity_sources (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), activity_id uuid not null references public.activities(id) on delete cascade, source text not null, external_id text not null, raw_record_id uuid references public.raw_records(id), quality text not null check(quality in ('high','medium','low','insufficient')), provenance jsonb not null default '{}', unique(user_id,source,external_id));
+create table public.activity_streams (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), activity_id uuid not null references public.activities(id) on delete cascade, kind text not null, samples jsonb not null, source_reference jsonb not null);
+create table public.recovery_nights (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), night_date date not null, underlying_metrics jsonb not null, source_references jsonb not null, unique(user_id,night_date));
+create table public.exercises (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), name text not null, muscle_groups text[] not null default '{}', aliases text[] not null default '{}');
+create table public.routines (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), name text not null);
+create table public.routine_exercises (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), routine_id uuid not null references public.routines(id) on delete cascade, exercise_id uuid not null references public.exercises(id), position integer not null, structure jsonb not null default '{}');
+create table public.gym_sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), activity_id uuid unique references public.activities(id), routine_id uuid references public.routines(id), routine_name text not null, started_at timestamptz not null, ended_at timestamptz, status text not null check(status in ('active','completed','discarded')));
+create unique index one_active_gym_session_per_user on public.gym_sessions(user_id) where status='active';
+create table public.gym_sets (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), session_id uuid not null references public.gym_sessions(id) on delete cascade, exercise_id uuid not null references public.exercises(id), position integer not null, weight_kg numeric check(weight_kg >= 0), reps integer check(reps > 0), rir numeric check(rir between 0 and 10), rpe numeric check(rpe between 1 and 10), failure boolean not null default false, completed boolean not null default false, logged_at timestamptz);
+create table public.derived_metrics (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), metric_name text not null, value numeric not null, unit text not null, calculation_version text not null, calculated_at timestamptz not null default now(), input_references jsonb not null, quality text not null check(quality in ('high','medium','low','insufficient')), confidence text not null check(confidence in ('high','medium','low','insufficient')), is_mock boolean not null default false);
+create table public.baselines (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), metric_name text not null, value numeric not null, unit text not null, observations integer not null, period_start date not null, period_end date not null, maturity text not null check(maturity in ('insufficient','preliminary','developing','established')), confidence text not null check(confidence in ('high','medium','low','insufficient')));
+create table public.goals (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), original_text text not null, interpretation jsonb, created_at timestamptz not null default now());
+create table public.planned_sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), planned_at timestamptz not null, title text not null, purpose text not null, type text not null, status text not null check(status in ('planned','completed','skipped','adjusted')));
+alter table public.activities add column planned_session_id uuid references public.planned_sessions(id);
+create table public.context_events (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), occurred_at timestamptz not null, kind text not null, note text not null);
+create table public.schedule_constraints (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), starts_at timestamptz not null, ends_at timestamptz not null, source_reference jsonb, reason text not null);
+create table public.assessments (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), domain text not null, state text not null, confidence text not null, explanation text not null, evidence_families jsonb not null, calculated_at timestamptz not null default now(), is_mock boolean not null default false);
+create table public.recommendations (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), session_id uuid references public.planned_sessions(id), action text not null, rationale text not null, confidence text not null, candidates jsonb not null, evidence_references jsonb not null, requires_approval boolean not null default true, created_at timestamptz not null default now(), check(action <> 'reschedule' or requires_approval));
+create table public.decision_outcomes (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), recommendation_id uuid not null references public.recommendations(id), choice text not null check(choice in ('accepted','rejected')), decided_at timestamptz not null default now(), subsequent_activity_ids uuid[] not null default '{}');
+create table public.coach_conversations (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), title text not null, created_at timestamptz not null default now());
+create table public.coach_messages (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id), conversation_id uuid not null references public.coach_conversations(id) on delete cascade, role text not null, content text not null, evidence jsonb, created_at timestamptz not null default now());
+-- Include user_id in referenced keys to prevent cross-user linkage even with guessed IDs.
+do $$
+declare t text; link record;
+begin
+ foreach t in array array['raw_records','activities','activity_sources','activity_streams','recovery_nights','exercises','routines','routine_exercises','gym_sessions','gym_sets','derived_metrics','baselines','goals','planned_sessions','context_events','schedule_constraints','assessments','recommendations','decision_outcomes','coach_conversations','coach_messages'] loop
+  execute format('alter table public.%I add constraint %I unique(id,user_id)',t,t || '_owner_key');
+  execute format('alter table public.%I enable row level security',t);
+  execute format('create policy owner_access on public.%I for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id)',t);
+ end loop;
+ for link in select * from (values
+  ('activity_sources','activity_id','activities'),('activity_sources','raw_record_id','raw_records'),('activity_streams','activity_id','activities'),
+  ('routine_exercises','routine_id','routines'),('routine_exercises','exercise_id','exercises'),('gym_sessions','activity_id','activities'),('gym_sessions','routine_id','routines'),
+  ('gym_sets','session_id','gym_sessions'),('gym_sets','exercise_id','exercises'),('activities','planned_session_id','planned_sessions'),
+  ('recommendations','session_id','planned_sessions'),('decision_outcomes','recommendation_id','recommendations'),('coach_messages','conversation_id','coach_conversations')
+ ) as refs(child,col,parent) loop
+  execute format('alter table public.%I add foreign key (%I,user_id) references public.%I(id,user_id)',link.child,link.col,link.parent);
+ end loop;
+end $$;
+alter table public.profiles enable row level security;
+create policy profile_owner on public.profiles for all to authenticated using(auth.uid()=id) with check(auth.uid()=id);
+create index activity_user_time on public.activities(user_id,started_at);
+create index metrics_user_name_time on public.derived_metrics(user_id,metric_name,calculated_at);
