@@ -112,3 +112,48 @@ Normalize library metadata before import snapshots/warnings and validate again a
 atomic confirmation. Keep unassigned sets/sessions separate from named muscle totals
 without excluding their history, actual performance or effort information. UI labels
 and optional fields expose this state. SQL 0003 is an unapplied alignment draft.
+
+## 2026-10-04 — Server-only Strava and canonical activity registry
+
+Strava is the cross-sport safety net, not authority for resistance-training structure.
+Add a new version-1 canonical registry with provider records/raw revisions and field-level
+provenance; leave browser Gym v2/revision 2 and the real Hevy dataset untouched. Explicit
+sync may publish timing/identity summaries for matching only. No sets/routines migrate.
+Activity registry access lives in Gym/Running links to preserve five primary navigation items.
+Running history is real; its physiology/dashboard cards remain visibly sample data.
+
+Use Supabase Auth identity and service-only integration tables/RPCs, encrypted OAuth tokens,
+HttpOnly encrypted app session/state cookies, exact POST origin validation and owner checks.
+No browser token persistence or public secrets. Opt-in encrypted single-user file storage is
+allowed only in development, requires a random access key, is ignored and excluded from
+production traces. Key rotation requires re-encryption/reconnection; no fake credentials or
+remote migrations run. Actual DB/Auth/API validation remains a separate configured step.
+
+Verify current official API rather than old tutorials. October 2026 API base is centralized
+as www.strava.com/api/v3, with api-v3.strava.com selectable for Jan 4 2027. Read-only scopes
+activity:read_all plus webhook-documented activity:read; no writes. Token scope accepts space
+or comma formats, refreshed tokens persist before use, and newest revoke endpoint authenticates
+the client with the refresh token. API errors omit raw response bodies/secrets.
+
+Versioned match heuristics use permanent IDs, sport/time/duration/distance, not title alone.
+One unique high cross-provider candidate links; weak/multiple or distinct same-provider IDs
+require review. Keep-separate/link decisions persist, source values survive, merged IDs redirect.
+Gym/Hevy remains authoritative, Strava strength shells do not create CompletedWorkouts, and
+confirmed canonical queries exclude pending reviews to avoid counting uncertain duplicates.
+Future Polar can attach another source; no Polar implementation or physiological score now.
+
+Registry backfill is summary-only, frozen before/after bounds, 50/page and user-driven bounded
+batches with checkpoints/idempotency. Explicit enrichment stores streams/laps separately and
+returns only stream availability/lap summaries to UI. Read and general rate headers both
+control persistent pauses; no frequent polling. Webhooks validate/queue rapidly and verify
+provider truth before destructive source/account state changes; canonical history stays.
+A public subscription and deployed queue worker are not silently created for localhost.
+
+Keep main Gym concise: three completed workouts, three recent exercise histories/search;
+full browsers paginate 20 with filters/sorts. Preserve all detail/lifecycle routes and tests.
+
+Later summary responses can omit earlier detailed fields. Preserve last recorded non-null
+canonical/device values rather than erasing enrichment; raw revisions preserve their source
+snapshot. Current source syncedAt still updates on identical sync. Explicit null optional
+measurements remain missing, not fabricated zero values. More granular per-field observation
+timestamps and provider removal semantics belong in the future precedence policy.

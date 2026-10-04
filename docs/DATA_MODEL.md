@@ -141,3 +141,52 @@ before building snapshots/warnings, and atomic confirmation revalidates it.
 Unassigned sets/sessions are reported separately from named muscle totals; their
 history, load/reps, previous performances and effort remain available. The new SQL
 alignment migration is unapplied, as are the existing migrations.
+
+## Canonical integration registry version 1
+
+The newer `CanonicalActivity` in `domain/activity.ts` is the integration entity; older
+foundation `Activity` contracts/seeds remain for labeled sample modules. Real sync does
+not use their stub Strava adapter. The canonical record includes stable provider-independent
+ID, normalized sport, title, UTC start, optional original local start/timezone, nullable
+elapsed/moving seconds, distance/elevation meters, recorded average/max HR and speed,
+device, status, available/missing fields, recorded/limited quality (not physiology),
+created/updated timestamps, source keys, optional Gym workout ID and future planned-session ID.
+
+`ExternalActivitySource` stores provider (Strava/Hevy/internal/future Polar/manual), permanent
+ID, athlete identity, exact original sport type, canonical reference, sync time/device,
+SHA-256 fingerprint, deletion flag, raw source values and previous raw revisions. Field
+provenance maps canonical fields to source keys. Existing selected values remain selected;
+new sources fill only absent values. Provider changes update only values owned by that
+provider. Raw records are retained; no global source/physiology precedence is fabricated.
+GPS/HR stream provenance is attached when actual nonempty streams arrive, with missingness
+explicitly recorded when unavailable. Missing HR is valid, especially for strength sessions.
+
+Registry has arrays of activities/sources/reviews, persisted link/separate decisions keyed
+by permanent source ID, canonical ID aliases after merges and paginated sync checkpoints.
+The matching v1 policy compares same sport, start within ten minutes and elapsed difference
+within max(15 minutes,25%). High requires start within one minute, elapsed difference within
+max(60 seconds,2%), plus distance within 2% for non-strength. Missing distance means possible
+match; title alone does not match. Unique high cross-provider candidates auto-link; multiple,
+weak or same-provider/different-ID candidates require review. These are documented heuristics,
+not calibrated probabilities. Pending review records are excluded by confirmed-window queries.
+
+Gym references contain only confirmed workout IDs, titles, timing, descriptive duration and
+provenance. A matching canonical strength session has one Gym reference and multiple sources;
+CompletedWorkout/exercise/set repositories are never mutated by sync. Unmatched strength is
+an honest shell. A future Polar source can attach to the same activity without a vendor adapter
+or physiological calculations in this milestone.
+
+`NormalizedStream` holds type, samples, original size, resolution and time/distance series
+metadata. Numeric, boolean moving and coordinate samples validate by kind; invalid samples
+are omitted with warnings, unsupported kinds are reported. Laps preserve recorded duration,
+distance, speed, average/max HR, start and original source values, with missing fields null.
+`RichActivityData` is separate server storage keyed by source ID; ordinary registry responses
+exclude raw snapshots, revision arrays and large streams. Detail includes stream status and
+sanitized lap summaries. Missing streams/laps are valid, never fabricated.
+
+SQL 0004 adds owner-keyed integration_registry (versioned JSON state), integration_accounts
+(encrypted token envelopes, unique provider/athlete), integration_rich_data, webhook_jobs
+(content-hash identity and processed timestamps), and leases. Service-only CAS and lease RPCs
+serialize mutations. Tables use RLS with no browser-access policies/grants. Application routes
+resolve authenticated owners; the SQL draft requires actual deployment verification. No Gym
+key/version/schema or JSON backup format is changed, and no existing data is moved/deleted.

@@ -53,7 +53,7 @@ writes and surfaces errors. Full JSON formatVersion 1 includes library, routines
 active/history and separate legacy archive. CSV covers real completed set rows.
 JSON restore and automatic backups are future work. Hevy CSV import uses a verified
 local parser and explicit review; uncertain identity prevents confirmation.
-No external service integrations have been added.
+Strava server integration is now implemented; live connection requires the setup below.
 
 ## Targeted refinements
 
@@ -114,3 +114,27 @@ totals; avoid interpreting these totals as equivalent hypertrophy stimulus.
 CSV source timezone is explicitly reviewed; default Europe/Rome. Repeated source
 indices are warned and preserved in separate blocks. Missing anatomical metadata
 is represented as null and reported separately as Unassigned. Full superset programming is not implemented.
+
+## Strava/canonical activity milestone
+
+- Secure Integrations is optional; local Gym works without server credentials. Supabase
+  Auth/account ownership gates server data. Connect, denied/scope handling, reconnect and
+  confirmed disconnect are implemented. Connection alone never syncs history.
+- General `/activities` is the broad cross-sport registry. Access from Gym and real Running
+  history keeps the five primary navigation destinations intact. Unknown/unplanned sports
+  are valid `other` records with exact source types, not discarded activities.
+- Running workout history uses canonical run/trail-run records exclusively. Sample analytical
+  cards remain explicitly separated; real run details expose recorded values, source/device,
+  nullable HR, speed, elevation, field provenance, lap summaries and stream availability.
+- Gym main shows only the three most recent completed workouts. Full `/gym/history` offers
+  chronological pages of 20, search/title/date-range filters and unchanged detail routes.
+  Exercise history is search-first: three recent entries (eight search matches), full searchable
+  and sortable browser at `/gym/exercise-history` with pages of 20. No personal data changed.
+- Strava strength matches existing confirmed Gym/Hevy summaries. A unique high heuristic match
+  attaches the source to one canonical session; ambiguous/weak matches require an explicit
+  persisted link/separate decision. It never creates a CompletedWorkout or invents sets.
+- Explicit bounded sync/backfill with checkpoint, rate-budget pauses and counters. Rich data
+  hydration is user-requested, not wholesale historical stream fetching. No automatic workout
+  import, rescheduling, physiological score, Polar, Calendar, Consensus or real Coach.
+- Public webhooks acknowledge persisted events quickly; processing checks API truth. Localhost
+  uses manual sync; live subscription and background worker setup remain deliberate later steps.

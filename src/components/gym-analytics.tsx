@@ -1,7 +1,7 @@
 'use client';
-import Link from 'next/link';
+import { ExerciseHistorySearch } from './exercise-history-search';
 import { useWorkout } from './workout-provider';
-import { weeklyGymSummary, exerciseExposures } from '@/analytics/gym';
+import { weeklyGymSummary } from '@/analytics/gym';
 export function GymAnalytics() {
   const { store } = useWorkout();
   const summary = weeklyGymSummary(store.history);
@@ -79,28 +79,7 @@ export function GymAnalytics() {
           )}
         </section>
       </div>
-      <section className="card">
-        <h3>Exercise performance history</h3>
-        <p className="muted">
-          Load + reps + effort across actual exposures. No unified performance
-          score.
-        </p>
-        {store.exercises
-          .filter((e) => exerciseExposures(store.history, e.id).length)
-          .map((e) => (
-            <p key={e.id}>
-              <Link
-                className="text-button"
-                href={`/gym/exercises/${encodeURIComponent(e.id)}`}
-              >
-                {e.name} →
-              </Link>
-            </p>
-          ))}
-        {!store.history.length && (
-          <p className="caption">No personal exercise history yet.</p>
-        )}
-      </section>
+      <ExerciseHistorySearch />
     </>
   );
 }

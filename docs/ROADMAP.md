@@ -45,4 +45,21 @@ Verified Italian Hevy CSV parser, review/mapping/duplicate/confirmation UI, prov
 atomic local batches and repeat-import protection are implemented. Real mapped history
 feeds Gym exposures and descriptive analytics. Next: validated JSON backup restore
 with preview/confirmation and conflict handling; then reviewed muscle-metadata backfill,
-batch undo and broader export-version/timezone support. No external APIs enabled.
+batch undo and broader export-version/timezone support. Strava requires explicit configured authorization; Hevy remains a local-file import.
+
+## Strava milestone implemented; live deployment pending
+
+OAuth/rotation/revocation, server-only encrypted token repositories, Supabase Auth ownership,
+canonical registry/source/field provenance, reusable matching and persisted review decisions,
+Gym strength linking, bounded resumable backfill, separate streams/laps, webhook queue/processor,
+real Running history and searchable/paginated Gym history are implemented with synthetic tests.
+Live account authorization, unapplied SQL migration verification, real rate limits and public
+webhook delivery remain pending credentials/deployment. Supabase is required for production
+integrations, not for local Gym; isolated encrypted dev-file mode is development-only.
+
+Recommended next milestone: configure Supabase and Strava, verify owner isolation/RPC leases
+in the actual database, authorize one real account deliberately, backfill with matching review,
+and inspect real HR/GPS/laps missingness without enabling physiological decisions. Then add
+operational webhook worker/retry observability, canonical export/deletion and field-precedence
+policy, with explicit Gym reconciliation/cloud migration designed separately. Existing JSON
+restore/preview, multi-tab coordination and Gym metadata review remain valuable later tasks.

@@ -50,6 +50,9 @@ export function GymDashboard() {
           Exercise library →
         </Link>
         <span className="tag">Real local data</span>
+        <Link className="text-button" href="/activities">
+          All activities & Strava →
+        </Link>
       </div>
       {!store.routines.length && (
         <section className="card">

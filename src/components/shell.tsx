@@ -70,7 +70,9 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="sample-badge">
             {path.startsWith('/gym')
               ? 'GYM · REAL LOCAL DATA'
-              : 'DEMO · SAMPLE DATA'}
+              : path.startsWith('/activities') || path === '/integrations'
+                ? 'REAL ACTIVITY REGISTRY'
+                : 'DEMO · SAMPLE DATA'}
           </span>
           <button
             className="icon-button"

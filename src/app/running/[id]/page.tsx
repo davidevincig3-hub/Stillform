@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { ActivityDetail } from '@/components/activity-history';
 import { PageHeading } from '@/components/assessment';
 import { runHistory } from '@/repositories/seed';
 export default async function RunDetail({
@@ -9,7 +9,7 @@ export default async function RunDetail({
 }) {
   const { id } = await params;
   const run = runHistory.find((r) => r.id === id);
-  if (!run) notFound();
+  if (!run) return <ActivityDetail id={id} />;
   return (
     <>
       <Link className="text-button" href="/running">

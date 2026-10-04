@@ -44,6 +44,8 @@ export const polarAdapter: ActivityProvider = {
     };
   },
 };
+// Legacy demo contract only. Real OAuth/sync uses server/strava-client + strava-service.
+// Keep this adapter unavailable: credentials cannot enter this client-safe module.
 export const stravaAdapter: ActivityProvider = {
   source: 'strava',
   async fetchActivities() {

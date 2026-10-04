@@ -90,3 +90,62 @@ v2/schemaRevision 2 is a compatible metadata extension with defaults for older s
 key is deleted or rewritten. JSON formatVersion 1 retains the full validated extended
 store. Future SQL adapters must preserve nullable reps/timing, source order/context,
 fingerprints, mappings and batches; existing SQL migrations are still unapplied.
+
+## Secure integration server boundary
+
+`domain/activity.ts` defines canonical activities, external sources, nullable recorded
+metadata, quality/field provenance, Gym matching summaries, reviews/decisions, registry
+version 1, streams and provider-independent laps. `integrations/activity-matching.ts`
+is pure provider-independent identity/matching/linking logic; `analytics/gym-history.ts`
+contains real-only history queries. UI components orchestrate forms/API calls only.
+
+`server/integration-config.ts` centralizes API hosts and private environment configuration.
+`integration-security.ts` implements AES-256-GCM envelopes, stable source fingerprints,
+constant-time comparison and expiring owner-bound OAuth state. `integration-auth.ts`
+handles Supabase Auth sessions in encrypted HttpOnly cookies and validates ownership on
+requests. POST routes enforce origin; cookies use SameSite=Lax and Secure outside localhost.
+OAuth state is consumed once. Strava credentials never enter browser storage, API responses,
+React props or client imports. Next's server-only guard plus production bundle tests enforce
+that boundary. Safe UI configuration responses expose missing variable names only.
+
+`StravaClient` injects fetch for tests, exchanges/refreshes/revokes tokens, parses response
+rate headers and normalizes provider records/streams/laps. `authorizedCall` persists rotating
+refresh tokens before subsequent API calls and retries one 401, then requires reconnect.
+`strava-service.ts` owns page checkpoints, bounded enrichment and queued-event processing.
+All records in a page normalize before mutation. Exact permanent source identities make
+retries idempotent; fingerprints preserve prior raw revisions. No provider response bodies,
+secrets or personal records are logged on errors. Routes expose curated errors/status only.
+
+`IntegrationRepository` separates versioned registry CAS, encrypted accounts, rich-data
+storage, deduplicated webhook jobs and per-owner leases. Supabase uses REST/RPC with a
+server service role; migration 0004 denies public/anon/authenticated table and RPC access.
+Ownership is checked in app routes because service role bypasses RLS; user IDs are never
+accepted from request bodies. A 180-second lease serializes token rotation and sync; CAS
+protects registry replacement. Rich-data writes are independent idempotent upserts, not a
+single database transaction with registry writes. Retrying incomplete enrichment is safe.
+
+Explicit development storage implements the same contract in AES-encrypted ignored server
+files, atomic replacement and file leases. It is refused outside NODE_ENV=development,
+requires a random development access key, and supports one fixed development owner only.
+Next deployment traces exclude personal imports, environment files and this folder.
+Production uses Supabase. SQL is still unapplied and needs real DB/RLS verification.
+
+Browser Gym v2/revision 2 remains unchanged, including Hevy provenance/mappings, active
+workouts and backups. Explicit sync uploads only matching summaries for confirmed history,
+not routines, exercises or sets. Gym persistence is not authenticated/cloud-migrated yet.
+Registry Gym links depend on that browser/origin; stale references after local deletion or
+edits are a documented limitation. No destructive migration runs on load or connection.
+
+Backfill fetches 50 summaries/page, at most five pages per user click with 2.1-second gaps;
+server throttles page requests, persists both general/read API budget pauses and frozen
+before/after bounds. Initial backfill spans all history; later incremental discovery has a
+two-day overlap. Older edits/deletions need webhook processing/full backfill (a full listing
+does not itself tombstone records absent from the listing). Rich detail uses at most three
+API requests plus auth refresh; stream arrays stay in server storage. UI gets summaries.
+
+Webhooks validate challenge/subscription/event/athlete and queue without a provider call.
+No signed payload is available; create/update/delete/deauth processors verify provider truth,
+retain canonical history, acknowledge processed jobs, and retain failures for retry. Only
+manual queued-job processing is wired currently; a deployed durable worker is future work.
+Registry JSON and raw revisions are per-owner blobs initially; larger-history indexing,
+field-precedence configuration, deletion/export controls and key rotation remain extensions.

@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { AssessmentCard, PageHeading } from '@/components/assessment';
 import { MetricChart } from '@/components/chart';
-import { running, runHistory } from '@/repositories/seed';
+import { running } from '@/repositories/seed';
+import { ActivityHistory } from '@/components/activity-history';
 export default function Running() {
   return (
     <>
@@ -9,6 +9,10 @@ export default function Running() {
         title="Progress you can examine."
         subtitle="Comparable efforts, honest uncertainty, and the full running picture."
       />
+      <p className="notice">
+        Sample running analytics below. Real synced workout history is listed
+        separately; these metrics are not calculated from your activities.
+      </p>
       <AssessmentCard assessment={running} />
       <div className="section-heading">
         <h2>Aerobic efficiency</h2>
@@ -84,27 +88,7 @@ export default function Running() {
           <span className="tag">HR-based load: not calculated</span>
         </div>
       </section>
-      <div className="section-heading">
-        <h2>Workout history</h2>
-        <span className="caption">All 3 sample runs</span>
-      </div>
-      <div className="card history">
-        {runHistory.map((r) => (
-          <Link key={r.id} href={`/running/${r.id}`} className="history-row">
-            <div>
-              <span className="caption">{r.date} · Sample</span>
-              <h3>{r.title}</h3>
-            </div>
-            <div>
-              <strong>{r.distance}</strong>
-              <p className="caption">
-                {r.duration} · {r.pace}
-              </p>
-            </div>
-            <span>→</span>
-          </Link>
-        ))}
-      </div>
+      <ActivityHistory running />
     </>
   );
 }
