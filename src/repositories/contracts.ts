@@ -8,18 +8,18 @@ import type {
   DecisionOutcome,
   DerivedMetric,
   Goal,
-  GymSession,
   PlannedSession,
   RawRecord,
-  Routine,
   ScheduleConstraint,
 } from '../domain/models';
+import type { Exercise, GymRoutine, GymWorkout } from '../domain/gym';
 export interface TrainingRepository {
   getRawRecords(ids: string[]): Promise<RawRecord[]>;
   getBaselines(metric?: string): Promise<Baseline[]>;
   getAssessments(domain: string, days: number): Promise<Assessment[]>;
   getGoals(): Promise<Goal[]>;
-  getRoutines(): Promise<Routine[]>;
+  getRoutines(): Promise<GymRoutine[]>;
+  getExercises(): Promise<Exercise[]>;
   getDecisionOutcomes(): Promise<DecisionOutcome[]>;
   getRecoveryHistory(days: number): Promise<ChartContext[]>;
   getMetricHistory(name: string, days: number): Promise<DerivedMetric[]>;
@@ -29,8 +29,11 @@ export interface TrainingRepository {
     to?: string;
   }): Promise<Activity[]>;
   getActivityStreams(id: string): Promise<ActivityStream[]>;
-  getExerciseHistory(name: string, exposures: number): Promise<GymSession[]>;
-  getGymSession(id: string): Promise<GymSession | null>;
+  getExerciseHistory(
+    exerciseId: string,
+    exposures: number,
+  ): Promise<GymWorkout[]>;
+  getGymSession(id: string): Promise<GymWorkout | null>;
   compareActivities(ids: string[]): Promise<ChartContext[]>;
   comparePeriods(
     metric: string,

@@ -12,6 +12,12 @@ test('core navigation and persisted workout lifecycle', async ({ page }) => {
     .getByRole('navigation')
     .getByRole('link', { name: 'Gym', exact: true })
     .click();
+  await page
+    .getByText('Routine templates · structure only', { exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Use Push template', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Start Workout' }).click();
   await page.getByLabel('Chest press set 1 weight', { exact: true }).fill('60');
   await page.getByLabel('Chest press set 1 reps', { exact: true }).fill('10');
@@ -51,7 +57,12 @@ test('labels, chart context, goals, coach and dark theme', async ({ page }) => {
   for (const path of ['/', '/recovery', '/running', '/gym', '/plan']) {
     await page.goto(path);
     await expect(
-      page.getByText('DEMO · SAMPLE DATA', { exact: true }),
+      page.getByText(
+        path.startsWith('/gym')
+          ? 'GYM · REAL LOCAL DATA'
+          : 'DEMO · SAMPLE DATA',
+        { exact: true },
+      ),
     ).toBeVisible();
   }
   const goal =
@@ -135,6 +146,12 @@ test('set editing, extra exercises and browser back preserve active session', as
   page,
 }) => {
   await page.goto('/gym');
+  await page
+    .getByText('Routine templates · structure only', { exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Use Push template', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Start Workout' }).click();
   await page
     .getByRole('button', { name: 'Finish workout', exact: true })
@@ -152,7 +169,9 @@ test('set editing, extra exercises and browser back preserve active session', as
   await page
     .getByRole('button', { name: 'Remove Chest press set 4', exact: true })
     .click();
-  await page.getByLabel('Add an exercise', { exact: true }).fill('Calf raise');
+  await page
+    .getByLabel('Add an exercise', { exact: true })
+    .selectOption('builtin-calf-raise');
   await page
     .getByRole('button', { name: 'Add exercise', exact: false })
     .click();
@@ -194,6 +213,12 @@ test('mobile navigation, workout discard and chart context', async ({
     .click();
   await expect(page.getByText('Inspect chart context').first()).toBeVisible();
   await page.goto('/gym');
+  await page
+    .getByText('Routine templates · structure only', { exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Use Push template', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Start Workout' }).click();
   await page
     .getByRole('button', { name: 'Discard workout', exact: true })

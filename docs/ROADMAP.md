@@ -3,8 +3,11 @@
 ## Phase 1 — Foundation + gym logger + mock dashboard
 
 Five pages, local workout flow, sample charts, goals, choice demo, PWA, schema and
-contracts. Next: create/edit routines, real local comparable performance, data
-export/recovery, multi-tab protection and Hevy CSV preview. Milestone: mobile
+contracts. Gym V1 Real adds routine/custom-exercise management, identity-based actual
+previous exposures, completed/detail histories, descriptive analytics and JSON/CSV
+export. Migration isolates unverified legacy data. Next: validated JSON restore,
+multi-tab protection, offline resilience and a verified Hevy schema/parser with
+mapping/duplicate preview. Milestone: mobile
 reload/edit/leave/return/finish/discard end-to-end tests.
 
 ## Phase 2 — Strava

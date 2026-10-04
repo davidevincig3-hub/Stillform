@@ -24,6 +24,10 @@ export default function Recovery() {
           Underlying signals, not a proprietary score
         </span>
       </div>
+      <p className="sleep-interpretation muted">
+        Sample sleep perspective: timing is fairly regular, with brief
+        awakenings. Duration is below the illustrative personal baseline.
+      </p>
       <div className="three-grid">
         {[
           {

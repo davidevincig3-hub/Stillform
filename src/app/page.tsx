@@ -15,7 +15,7 @@ export default function Home() {
           See your week →
         </Link>
       </div>
-      <section className="card row">
+      <section className="card row todays-training">
         <div>
           <span className="tag">Planned · sample</span>
           <h3>Rest / optional walk</h3>
@@ -62,9 +62,6 @@ export default function Home() {
           </Link>
         ))}
       </div>
-      <p className="footer-note">
-        Plan stability, not plan loyalty. Changes should earn their disruption.
-      </p>
     </>
   );
 }

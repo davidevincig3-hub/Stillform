@@ -64,6 +64,14 @@ export default function Running() {
       <div className="section-heading">
         <h2>Running load</h2>
       </div>
+      <details className="card">
+        <summary>Secondary vendor signals · Polar Running Index</summary>
+        <p className="muted">
+          Not connected. No Running Index value is available. A future vendor
+          signal will complement comparable-session evidence, with source and
+          confidence preserved.
+        </p>
+      </details>
       <MetricChart metric="Running minutes" />
       <section className="card">
         <div className="row">

@@ -21,16 +21,50 @@ suggestions, and rescheduling always requires approval.
   threshold, 4×4 performance, load and full sample history. Detail routes prepare
   maps, streams, splits, zones, conditions and AI interpretation. Running Index is
   a future secondary vendor signal. No precise physiological estimates are invented.
-- Gym: seed Push/Pull/Legs routine selection; dedicated workout mode; editable
+- Gym: persistent create/edit/rename/delete/duplicate routines with ordered library
+  exercises, default sets, optional rep ranges and notes; dedicated workout mode; editable
   weight/reps/optional RIR, optional RPE/failure; add/remove sets/exercises;
   leave without ending; global return pill; reload persistence; completed history;
   explicit discard. Empty completion is rejected. Target weights are blank.
-  Sample analytics compare several exposures and weekly muscle-group sets.
+  Previous performances come exclusively from confirmed real completed workouts.
+  Real weekly sets/frequency use primary muscle-group snapshots; effort distributions
+  remain descriptive. Unknown effort limits comparisons. No sample analytics fill gaps.
+  Workout details reconstruct all sets, timestamps, duration, notes and provenance;
+  exercise details list dated exposures. Historical deletion requires confirmation.
+  Templates copy structure only. Built-in exercise metadata is editable only through
+  custom alternatives; custom exercises have stable IDs and can be renamed/edited.
 - Plan: clean sample week, original natural-language goal, phase/focus, recent and
   possible progression, flat planned trajectory, rationale, accept/reject sample
   proposal. No auto-rescheduling or precise forecasts; goal interpretation pending.
 - Coach: global compact question/larger chat demo, current-page context, usable
   during workouts, explicit placeholder replies and in-memory conversation history.
+
+## Gym data and storage
+
+Gym header and sections say real local data; Recovery/Running/Plan/Home remain demo.
+All personal queries require completed + confirmed user origin. V1 sessions without
+origin are preserved separately as legacy_unverified until reviewed; old sample
+previous text is removed. New workouts have local_logger provenance. Missing HR
+does not affect the logger or analytics. History snapshots survive routine deletion
+and exercise metadata edits. Weights are kg; blank weight means bodyweight.
+
+Version-2 local store preserves active sessions across navigation/reload, validates
+writes and surfaces errors. Full JSON formatVersion 1 includes library, routines,
+active/history and separate legacy archive. CSV covers real completed set rows.
+JSON restore and automatic backups are future work. Hevy CSV file inspection is
+explicitly unsupported without a verified parser; uncertain identity must prevent
+confirmation. No external integrations have been added.
+
+## Targeted refinements
+
+Home retains its structure with Explain and stronger today's-training prominence;
+the internal plan-stability slogan is removed from persistent UI. Recovery has a
+compact sample sleep interpretation without a score. Running has a secondary Polar
+Running Index placeholder; interval types support per-repeat pace/HR, target time,
+HR recovery, decay and consistency with nullable unavailable values. Plan data types
+distinguish historical actual, planned, candidate and statistical forecast series.
+Only the existing sample planned series is drawn; forecasts require supporting
+observations/model/validation/uncertainty metadata. No missing metrics are invented.
 
 ## Future behavior
 

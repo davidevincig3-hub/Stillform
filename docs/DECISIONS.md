@@ -37,3 +37,40 @@ shell and concurrent-tab arbitration are separate future work.
 Stability rather than loyalty. User approval for rescheduling; original goals
 retained; projection is planned/adaptive, not a fabricated forecast. Complete AI
 capability via selective tools, with personal/scientific/model evidence separated.
+
+## 2026-10-04 — Gym V1 Real and migration
+
+Keep existing architecture/history; add version-2 Gym store and version-1 full
+backup envelope. Use a small stable-ID exercise library, custom exercises, routine
+entry structure and immutable workout snapshots. No target weights or muscle
+contribution percentages. Previous performance and analytics use only confirmed
+completed user records. Missing effort limits comparisons; missing HR is normal.
+
+V1 lacks origin markers, so completed sessions are preserved in a review archive
+and active sessions are retained, both unverified. Discard sample previous text.
+Confirmation is an explicit user statement that sets represent actual training;
+never infer authenticity from a sample routine name. Preserve the old key and block
+writes on malformed data. Unknown historical timing is kept unknown. Routine
+deletion is local removal; the future SQL adapter soft-deletes relational routines.
+
+## 2026-10-04 — Exports and Hevy import
+
+JSON is canonical full backup; CSV is safe tabular history, not a relational backup.
+Include active and separate legacy records for reconstruction. Restore is deferred.
+No verified Hevy CSV schema exists in the repo, so parser/mapping/duplicate/approval
+contracts are provided and UI discloses unsupported parsing. Do not guess mappings.
+
+## 2026-10-04 — Small UX changes and future analytics shapes
+
+Preserve approved layouts. Improve mobile logger tap targets to at least 44px for
+set Done/delete, numeric keyboards and logged-set state. Keep optional effort
+expandable. Explain replaces technical evidence wording; remove the persistent
+internal slogan. Nullable interval metrics and discriminated progression series
+prepare future analytics without adding fake values or forecasts.
+
+## 2026-10-04 — Fresh browser verification
+
+Use isolated port 3100 with no server reuse; verify built production separately.
+Move the visible Next developer indicator to top-right and reserve mobile header
+space, because its default bottom-left position blocks Home navigation. Errors and
+warnings remain visible; checks are not bypassed.

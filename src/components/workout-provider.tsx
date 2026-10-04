@@ -7,11 +7,13 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  emptyStore,
-  parseStore,
-  storageKey,
-  type WorkoutStore,
-} from '@/repositories/workout-storage';
+  initialGymStore,
+  loadGymStore,
+  parseGymStore,
+  gymStorageKey,
+  legacyStorageKey,
+  type GymStore,
+} from '@/repositories/gym-storage';
 import {
   useBrowserReady,
   useBrowserValue,
@@ -19,32 +21,34 @@ import {
   writeBrowserValue,
 } from './browser-storage';
 interface WorkoutContext {
-  store: WorkoutStore;
+  store: GymStore;
   ready: boolean;
   error: string;
-  save: (store: WorkoutStore) => boolean;
+  save: (store: GymStore) => boolean;
 }
 const Context = createContext<WorkoutContext | null>(null);
 export function WorkoutProvider({ children }: { children: ReactNode }) {
-  const raw = useBrowserValue(storageKey);
+  const raw = useBrowserValue(gymStorageKey);
+  const legacy = useBrowserValue(legacyStorageKey);
   const ready = useBrowserReady();
   const available = useStorageAvailable();
   const [writeError, setWriteError] = useState('');
   const restored = useMemo(() => {
     try {
-      return { store: raw ? parseStore(raw) : emptyStore, error: '' };
+      return { store: loadGymStore(raw, legacy), error: '' };
     } catch {
       return {
-        store: emptyStore,
+        store: initialGymStore(),
         error:
-          'Saved workout data could not be loaded. Original storage is preserved until your next save.',
+          'Saved workout data could not be loaded. Original data is preserved. Writes are blocked; export or recover the stored data first.',
       };
     }
-  }, [raw]);
-  function save(next: WorkoutStore) {
+  }, [raw, legacy]);
+  function save(next: GymStore) {
     try {
-      parseStore(JSON.stringify(next));
-      writeBrowserValue(storageKey, JSON.stringify(next));
+      if (restored.error) throw new Error(restored.error);
+      parseGymStore(JSON.stringify(next));
+      writeBrowserValue(gymStorageKey, JSON.stringify(next));
       setWriteError('');
       return true;
     } catch {

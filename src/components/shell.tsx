@@ -53,7 +53,13 @@ export function Shell({ children }: { children: ReactNode }) {
   const workout = path === '/gym/workout';
   return (
     <>
-      <header className="topbar">
+      <header
+        className={
+          process.env.NODE_ENV === 'development'
+            ? 'topbar dev-topbar'
+            : 'topbar'
+        }
+      >
         <Link href="/" className="brand">
           <Activity size={24} />
           <span>
@@ -61,7 +67,11 @@ export function Shell({ children }: { children: ReactNode }) {
           </span>
         </Link>
         <div className="row">
-          <span className="sample-badge">DEMO · SAMPLE DATA</span>
+          <span className="sample-badge">
+            {path.startsWith('/gym')
+              ? 'GYM · REAL LOCAL DATA'
+              : 'DEMO · SAMPLE DATA'}
+          </span>
           <button
             className="icon-button"
             onClick={theme}
@@ -77,7 +87,11 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link
               key={href}
               href={href}
-              aria-current={path === href ? 'page' : undefined}
+              aria-current={
+                path === href || (href !== '/' && path.startsWith(href + '/'))
+                  ? 'page'
+                  : undefined
+              }
             >
               <Icon size={20} />
               <span>{label}</span>

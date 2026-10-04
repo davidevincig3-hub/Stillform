@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ProgressionContext } from './progression';
 
 export type Confidence = 'high' | 'medium' | 'low' | 'insufficient';
 export type BaselineMaturity =
@@ -186,6 +187,7 @@ export const workoutSchema = z.object({
 });
 export type GymSession = z.infer<typeof workoutSchema>;
 export interface ChartContext {
+  progression?: ProgressionContext;
   metric: string;
   unit: string;
   timeframeDays: number;

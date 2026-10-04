@@ -1,4 +1,216 @@
 @import 'tailwindcss';
+@media (max-width: 760px) {
+  .topbar.dev-topbar {
+    padding-right: 64px;
+  }
+  .dev-topbar .brand {
+    gap: 6px;
+    font-size: 18px;
+  }
+  .dev-topbar .brand-sub {
+    letter-spacing: 1px;
+    font-size: 6px;
+  }
+}
+select {
+  font: inherit;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px;
+  max-width: 100%;
+  min-height: 44px;
+}
+.todays-training {
+  border-left: 3px solid var(--accent);
+  min-height: 140px;
+}
+.todays-training h3 {
+  font-size: 21px;
+}
+.sleep-interpretation {
+  margin: 0 0 18px;
+  font-size: 13px;
+}
+.routine-card.selected {
+  border-color: var(--accent);
+}
+.routine-select {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  min-height: 95px;
+}
+.routine-actions {
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  margin-top: 12px;
+}
+.routine-actions > * {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.routine-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.routine-fields input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+}
+.compact {
+  gap: 5px;
+}
+.compact.secondary {
+  padding: 8px 12px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.library-list {
+  margin-top: 24px;
+}
+form.card > input {
+  width: 100%;
+  min-height: 44px;
+}
+.previous-performance {
+  background: var(--soft);
+  padding: 12px 14px;
+  border-radius: 9px;
+  margin: 16px 0;
+  font-size: 12px;
+}
+.previous-performance .eyebrow {
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.previous-empty {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.detail-set {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.gym-active .set-row {
+  grid-template-columns: 24px repeat(3, minmax(0, 1fr)) 48px 44px;
+  gap: 6px;
+}
+.gym-active .set-row input {
+  height: 44px;
+  padding: 6px;
+  font-size: 16px;
+}
+.gym-active .set-check,
+.set-delete {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.set-delete {
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+}
+.gym-active .set-check[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 22px;
+}
+.gym-active .effort summary {
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+  font-size: 10px;
+}
+.gym-active .effort label {
+  min-height: 44px;
+}
+.gym-active .effort input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+}
+.gym-active .workout-header {
+  margin-bottom: 22px;
+}
+.gym-active .workout-exercise > .row {
+  align-items: flex-start;
+}
+.gym-active .workout-exercise > .row button {
+  min-height: 44px;
+}
+.gym-active .primary,
+.gym-active .secondary {
+  min-height: 44px;
+}
+.gym-active .workout-finish {
+  padding-bottom: 30px;
+}
+@media (max-width: 760px) {
+  .routine-fields {
+    gap: 8px;
+  }
+  .routine-fields label {
+    font-size: 10px;
+  }
+  .gym-active .workout-exercise {
+    padding: 16px 12px;
+  }
+  .gym-active .workout-exercise h2 {
+    font-size: 20px;
+  }
+  .gym-active .set-row {
+    grid-template-columns: 18px repeat(3, minmax(0, 1fr)) 44px 44px;
+    gap: 4px;
+  }
+  .gym-active .set-head {
+    font-size: 10px;
+  }
+  .gym-active .set-table {
+    margin: 12px 0;
+  }
+  .gym-active .set-check {
+    width: 44px;
+  }
+  .gym-active .set-block {
+    padding: 4px 0;
+  }
+  .gym-active select {
+    width: 100%;
+  }
+  .gym-active .workout-header .secondary {
+    min-height: 44px;
+  }
+  .gym-active .row {
+    min-width: 0;
+  }
+  .gym-active h1 {
+    overflow-wrap: anywhere;
+  }
+  .routine-actions {
+    gap: 12px;
+  }
+  .todays-training {
+    min-height: 155px;
+  }
+}
 :root {
   --bg: #f6f7f4;
   --panel: #fff;

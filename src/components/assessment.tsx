@@ -26,7 +26,7 @@ export function AssessmentCard({ assessment }: { assessment: Assessment }) {
       </div>
       <p className="interpretation">{assessment.explanation}</p>
       <details>
-        <summary>Explore the evidence</summary>
+        <summary>Explain</summary>
         <p className="muted">
           These influential metrics are selected from ranked evidence, rather
           than fixed cards. HRV and night HR share the autonomic family; a

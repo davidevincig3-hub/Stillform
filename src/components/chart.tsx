@@ -20,7 +20,29 @@ export function MetricChart({
 }) {
   const [days, setDays] = useState(28);
   const [analyze, setAnalyze] = useState(false);
-  const context = sampleChart(metric, days);
+  const baseContext = sampleChart(metric, days);
+  const context = projected
+    ? {
+        ...baseContext,
+        progression: {
+          series: [
+            {
+              kind: 'planned' as const,
+              metric,
+              unit: baseContext.unit,
+              points: baseContext.points,
+              confidence: 'insufficient' as const,
+              inputReferences: [],
+              isMock: true,
+              rationale: 'Illustrative planned duration, not a forecast',
+            },
+          ],
+          forecastStatus: 'insufficient' as const,
+          personalDataGate: 'insufficient',
+          scientificRationaleGate: 'unverified',
+        },
+      }
+    : baseContext;
   return (
     <section className="card chart-card">
       <div className="row">
@@ -31,6 +53,12 @@ export function MetricChart({
               : 'Personal trend · sample'}
           </p>
           <h3>{metric}</h3>
+          {projected && (
+            <p className="caption">
+              Planned · Actual / candidate: unavailable · Forecast: insufficient
+              data
+            </p>
+          )}
         </div>
         <div className="segmented" aria-label={`${metric} timeframe`}>
           {[7, 28, 90].map((d) => (

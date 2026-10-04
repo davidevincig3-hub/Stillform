@@ -22,8 +22,9 @@ Future flow: provider → immutable raw record → normalize/deduplicate → can
 data plus field provenance → versioned deterministic metrics → evidence-family
 assessment → candidate comparison → user choice → outcome.
 
-V1 flow: clearly labeled fixtures → UI; set entry → validation/local store → active
-pill/completed history. Goals and demo proposal choices also persist locally.
+Gym flow: library/routine → immutable session snapshots → validated set editing →
+completed history → real-only exposure/weekly queries. Other pages use labeled fixtures.
+Goals and demo proposal choices also persist locally.
 SQL does not power V1. A Supabase repository will implement the same interfaces,
 with an explicit local-data migration path and server-only service credentials.
 
@@ -34,9 +35,35 @@ summaries first, progressively accessing deeper history/streams/raw data. Do not
 dump the complete database into the model or ask it to recalculate known metrics.
 
 Browser storage is per device and not backed up. Load/write failures are visible.
-Invalid original data is preserved until a new save. Multi-tab arbitration and
+Unreadable original data is preserved and writes are blocked. Multi-tab arbitration and
 offline editing remain TODOs. Service worker caches only a static offline page,
 never private API responses. Deployment requires HTTPS for PWA installation.
 
 Before real users: authentication, SQL/RLS tests, secure credentials, consent,
 export/deletion, backups, observability and accessibility review.
+
+## Gym V1 Real extension
+
+`domain/gym.ts` defines library Exercise, RoutineExercise, GymRoutine and workout
+schemas; `domain/gym-workout.ts` owns effort/completion transitions. Legacy domain
+types and `workout-storage.ts` are retained solely for V1 decoding/tests. Current
+UI uses `repositories/gym-storage.ts`, version 2, through the existing provider.
+`analytics/gym.ts` supplies real-history filtering, identity-based exposure queries,
+formatting and descriptive weekly aggregation; it imports no seeds. UI components
+handle forms, navigation and disclosure, not persistence or analytical calculations.
+
+`gym-export.ts` validates the full backup envelope and produces escaped CSV.
+`integrations/hevy-import.ts` separates verified parsing, mapping, duplicate review
+and explicit confirmation. No verified parser/committer is supplied. Local import is
+therefore unavailable and cannot silently create workouts.
+
+Migration is deterministic and read-only until the first user save; the old key is
+preserved. Unknown origin is isolated from real queries until review. Routine edits
+do not mutate active/history snapshots. Custom exercise renames keep their IDs;
+historical names/muscle groups stay as logged. The future SQL adapter will map
+library IDs via library_key and soft-delete routines to preserve relational links.
+Both SQL migrations remain unapplied and require database testing.
+
+Browser tests use port 3100 with no server reuse, preventing stale previews from
+passing tests. The development indicator stays visible in the top-right with mobile
+header space reserved so it does not cover bottom navigation. No errors are suppressed.

@@ -5,7 +5,8 @@
 Stillform is a Next.js App Router / React / strict TypeScript / Tailwind / Recharts
 application. Use pnpm and preserve its lockfile. Read `docs/PRODUCT_SPEC.md` and
 `docs/DECISIONS.md` before architectural changes. Supabase SQL is intended but
-unapplied. External APIs, authentication, real analytics and AI remain stubs.
+unapplied. External APIs, authentication, physiological analytics and AI remain stubs.
+Gym logging and descriptive analytics use confirmed real local data.
 
 ## Working practices
 
@@ -39,6 +40,17 @@ unapplied. External APIs, authentication, real analytics and AI remain stubs.
 - Leaving a workout preserves it and provides the global return pill.
 - Rescheduling requires approval; preserve original natural-language goals.
 - Charts expose structured context; AI retrieves selectively and separates evidence.
+
+## Gym persistence
+
+Current Gym domain is `src/domain/gym.ts`; storage uses `adaptive-coach.gym.v2`
+(version 2). Retain legacy V1 decoder and tests. Old unmarked records require review
+before entering personal history; discard all sample previous-performance strings.
+Real queries filter completed confirmed-user origin and use stable exercise IDs.
+Preserve routine/exercise snapshots, JSON formatVersion 1 and CSV export safety.
+Never fill insufficient personal data with seeds. Hevy parsing stays unavailable
+until verified mappings and confirmation are implemented. Browser tests use fresh
+port 3100; set PLAYWRIGHT_PRODUCTION=1 to check a built production app.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
