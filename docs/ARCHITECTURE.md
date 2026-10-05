@@ -1,5 +1,13 @@
 # Architecture
 
+Recovery quality uses a shared domain override schema (`observation-quality.ts`) and
+filtered query boundary (`recovery-inputs.ts`) for Sleep/Nightly/continuous/PPI. Server
+`recovery-quality.ts` owns validated, locked/CAS user adjudication and public projections.
+UI history orchestrates requests; it does not persist or calculate eligibility locally.
+Analytics defend against excluded inputs even when handed unfiltered observations.
+Overrides survive normalizer upserts without mutating provider raw snapshots. Future
+Home/Recovery Engine inputs must come through this boundary; no engine exists yet.
+
 ## Polar v4 extension (current)
 
 `domain/polar.ts` provides normalized physiological schemas, family scopes/windows, date

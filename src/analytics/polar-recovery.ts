@@ -1,4 +1,9 @@
 import type { PolarSleep, PolarNightly } from '../domain/polar';
+import {
+  isRecoveryEligible,
+  type ValidityOverride,
+} from '../domain/observation-quality';
+import type { recoveryFamilies } from '../domain/recovery-inputs';
 export const maturityPolicy = {
   preliminary: 7,
   developing: 14,
@@ -14,6 +19,7 @@ export function baselineMaturity(count: number, policy = maturityPolicy) {
         : 'insufficient';
 }
 export interface RecoveryPoint {
+  validityOverride?: ValidityOverride | null;
   date: string;
   value: number | null;
   source: 'polar';
@@ -22,6 +28,20 @@ export interface RecoveryPoint {
 export type PublicSleep = Omit<PolarSleep, 'raw' | 'previous'>;
 export type PublicNightly = Omit<PolarNightly, 'raw' | 'previous'>;
 export interface RecoveryData {
+  recordCounts?: Record<
+    (typeof recoveryFamilies)[number],
+    { provider: number; valid: number; excluded: number }
+  >;
+  history?: {
+    family: (typeof recoveryFamilies)[number];
+    date: string;
+    source: 'polar';
+    device: string | null;
+    syncedAt: string;
+    sensorQuality: 'unknown';
+    validityOverride: ValidityOverride | null;
+    summary?: Record<string, unknown>;
+  }[];
   realMode: boolean;
   connected: boolean;
   sleep: PublicSleep[];
@@ -31,13 +51,15 @@ export interface RecoveryData {
   asOf: string;
 }
 export function recoverySeries(data: RecoveryData) {
+  const sleep = data.sleep.filter(isRecoveryEligible),
+    nightly = data.nightly.filter(isRecoveryEligible);
   return [
     {
       name: 'Nightly RMSSD',
       unit: 'ms',
       context:
         'Polar Nightly Recharge · vendor-provided RMSSD, not reconstructed from BPM',
-      points: data.nightly.map((n) => ({
+      points: nightly.map((n) => ({
         date: n.date,
         value: n.rmssdMs,
         source: 'polar' as const,
@@ -49,7 +71,7 @@ export function recoverySeries(data: RecoveryData) {
       unit: 'ms',
       context:
         'Mean nightly recovery beat interval; not mean nightly heart rate',
-      points: data.nightly.map((n) => ({
+      points: nightly.map((n) => ({
         date: n.date,
         value: n.rriMs,
         source: 'polar' as const,
@@ -60,7 +82,7 @@ export function recoverySeries(data: RecoveryData) {
       name: 'Nightly respiration interval',
       unit: 'ms',
       context: 'Polar respiration interval; not breaths per minute',
-      points: data.nightly.map((n) => ({
+      points: nightly.map((n) => ({
         date: n.date,
         value: n.respirationIntervalMs,
         source: 'polar' as const,
@@ -71,7 +93,7 @@ export function recoverySeries(data: RecoveryData) {
       name: 'Sleep duration',
       unit: 'h',
       context: 'Polar asleep duration · underlying signal',
-      points: data.sleep.map((n) => ({
+      points: sleep.map((n) => ({
         date: n.date,
         value: n.asleepSeconds === null ? null : n.asleepSeconds / 3600,
         source: 'polar' as const,
@@ -83,7 +105,7 @@ export function recoverySeries(data: RecoveryData) {
       unit: 'vendor index',
       context:
         'Polar continuity index; a vendor sleep measure, not a Recovery score',
-      points: data.sleep.map((n) => ({
+      points: sleep.map((n) => ({
         date: n.date,
         value: n.continuity,
         source: 'polar' as const,
@@ -94,7 +116,7 @@ export function recoverySeries(data: RecoveryData) {
       name: 'Sleep efficiency',
       unit: '%',
       context: 'Polar sleep efficiency · not readiness',
-      points: data.sleep.map((n) => ({
+      points: sleep.map((n) => ({
         date: n.date,
         value: n.efficiencyPercent,
         source: 'polar' as const,
@@ -115,7 +137,9 @@ export function windowSummary(
       .slice(0, 10),
     byDay = new Map(
       points
-        .filter((p) => p.date >= start && p.date <= end)
+        .filter(
+          (p) => isRecoveryEligible(p) && p.date >= start && p.date <= end,
+        )
         .map((p) => [p.date, p]),
     );
   const dates = Array.from({ length: days }, (_, i) =>

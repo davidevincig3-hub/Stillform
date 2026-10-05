@@ -18,6 +18,8 @@ import {
   type RecoveryPoint,
 } from '@/analytics/polar-recovery';
 import { PageHeading } from './assessment';
+import { RecoveryHistory } from './recovery-history';
+import { isRecoveryEligible } from '@/domain/observation-quality';
 function RealMetric({
   name,
   unit,
@@ -126,8 +128,16 @@ function RealMetric({
     </section>
   );
 }
-export function RealRecovery({ data }: { data: RecoveryData }) {
-  const latest = [...data.sleep]
+export function RealRecovery({
+  data,
+  onRefresh,
+}: {
+  data: RecoveryData;
+  onRefresh: () => Promise<void>;
+}) {
+  const validSleep = data.sleep.filter(isRecoveryEligible),
+    validNightly = data.nightly.filter(isRecoveryEligible);
+  const latest = [...validSleep]
     .sort((a, b) => a.date.localeCompare(b.date))
     .at(-1);
   return (
@@ -137,9 +147,15 @@ export function RealRecovery({ data }: { data: RecoveryData }) {
         subtitle="Real Polar observations. Personalized Recovery interpretation is not yet computed."
       />
       <section className="card">
-        <h2>{data.sleep.length} nights of sleep data</h2>
+        <h2>{validSleep.length} valid sleep nights</h2>
+        {data.recordCounts && (
+          <p>
+            {data.recordCounts.sleep.provider} Polar sleep records ·{' '}
+            {data.recordCounts.sleep.excluded} Polar records excluded
+          </p>
+        )}
         <p>
-          {data.nightly.length} Nightly Recharge dates ·{' '}
+          {validNightly.length} valid Nightly Recharge dates ·{' '}
           {data.connected
             ? 'Polar connected'
             : 'Disconnected · saved history retained'}
@@ -197,8 +213,8 @@ export function RealRecovery({ data }: { data: RecoveryData }) {
       </section>
       <details className="card">
         <summary>Vendor Nightly Recharge context</summary>
-        {data.nightly.length ? (
-          data.nightly.slice(-28).map((n) => (
+        {validNightly.length ? (
+          validNightly.slice(-28).map((n) => (
             <p className="caption" key={n.date}>
               {n.date}: {JSON.stringify(n.vendor)} · Polar vendor comparisons
               only; not our Recovery verdict.
@@ -218,6 +234,7 @@ export function RealRecovery({ data }: { data: RecoveryData }) {
           analytics.
         </p>
       </section>
+      <RecoveryHistory history={data.history} onRefresh={onRefresh} />
     </>
   );
 }
@@ -226,6 +243,14 @@ export function RecoveryMode({ sample }: { sample: React.ReactNode }) {
     [message, setMessage] = useState(''),
     [checking, setChecking] = useState(true),
     [sampleView, setSampleView] = useState(false);
+  async function refresh() {
+    const response = await fetch('/api/polar/recovery', { cache: 'no-store' });
+    if (!response.ok)
+      throw new Error(
+        'Validity saved; Recovery reload failed. Reload this page.',
+      );
+    setData(await response.json());
+  }
   useEffect(() => {
     let alive = true;
     fetch('/api/polar/recovery', { cache: 'no-store' })
@@ -272,7 +297,11 @@ export function RecoveryMode({ sample }: { sample: React.ReactNode }) {
               {sampleView ? 'Show real data' : 'Show labelled sample view'}
             </button>
           </div>
-          {sampleView ? sample : <RealRecovery data={data} />}
+          {sampleView ? (
+            sample
+          ) : (
+            <RealRecovery data={data} onRefresh={refresh} />
+          )}
         </>
       ) : (
         <>

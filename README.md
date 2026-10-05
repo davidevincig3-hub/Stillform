@@ -6,6 +6,13 @@ service or credentials required for local Gym and sample dashboards.
 
 ## Run locally
 
+Recovery provider history has explicit **Exclude from recovery / Restore** controls.
+User adjudications (including `sensor_artifact`) live separately from immutable Polar
+payloads and survive resync. Real Recovery shows eligible/valid and excluded counts;
+excluded records stay inspectable but never enter its charts, baselines or maturity
+counts. The shared recovery-input boundary is available for future Home/engine
+consumers; those engines and confidence decisions remain unimplemented.
+
 Polar activity detail separates manual/automatic laps and displays persisted interval
 sample availability. Existing detail is corrected on read without rehydration or raw
 payload changes. Duration/elapsed pace use clock notation; SPEED/DISTANCE sample units

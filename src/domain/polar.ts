@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validityOverrideSchema } from './observation-quality';
 export const polarFamilies = [
   'training',
   'sleep',
@@ -46,6 +47,7 @@ const base = {
   previous: z.array(record).default([]),
   device: z.string().nullable(),
   sensorQuality: z.literal('unknown'),
+  validityOverride: validityOverrideSchema.nullable().optional(),
 };
 export const sleepSchema = z.object({
   ...base,

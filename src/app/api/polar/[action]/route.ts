@@ -30,6 +30,7 @@ import {
   publicPolarState,
 } from '@/server/polar-service';
 import { polarScopes, familyScope } from '@/domain/polar';
+import { setPolarValidity, publicRecovery } from '@/server/recovery-quality';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const response = (body: unknown, status = 200) =>
@@ -94,23 +95,7 @@ export async function GET(
     if (action === 'recovery') {
       const p = await repo.readPolar(owner),
         connected = !!(await repo.account(owner, 'polar'));
-      return response({
-        realMode: p.state.realMode || connected,
-        connected,
-        sleep: p.state.sleep.map(({ raw, previous, ...safe }) => {
-          void raw;
-          void previous;
-          return safe;
-        }),
-        nightly: p.state.nightly.map(({ raw, previous, ...safe }) => {
-          void raw;
-          void previous;
-          return safe;
-        }),
-        continuousDays: p.state.continuous.length,
-        ppiDays: new Set(p.state.ppi.map((p) => p.date)).size,
-        asOf: new Date().toISOString(),
-      });
+      return response(publicRecovery(p.state, connected));
     }
     if (action === 'connect') {
       if (new URL(request.url).searchParams.get('account') !== 'confirmed')
@@ -223,6 +208,10 @@ export async function POST(
     if (action === 'sync')
       return response(
         await polarSyncStep(owner, repo, client, await request.json()),
+      );
+    if (action === 'quality')
+      return response(
+        await setPolarValidity(owner, repo, await request.json()),
       );
     if (action === 'metadata')
       return response(await polarMetadata(owner, repo, client));

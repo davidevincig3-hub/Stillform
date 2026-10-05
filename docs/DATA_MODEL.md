@@ -10,6 +10,19 @@ Other physiological families keep independently verified date-only ranges.
 
 ## Polar source storage version 1 (current extension)
 
+Every recovery observation shares optional `validityOverride` metadata with status
+`valid | excluded`, nullable reason (`sensor_artifact | incorrect_detection | other`),
+ISO `adjudicatedAt` and `adjudicatedBy: user`. This additive version-1 schema extension
+accepts existing stored records without an override; absence means unchanged provider
+eligibility. Overrides are independent of raw, previous, source, device and completeness.
+Resync upserts preserve existing overrides and provider raw revision behavior.
+
+The recovery query boundary filters exclusions for all four families. Public Recovery
+returns eligible observations plus safe provider-history metadata, normalized summaries,
+and provider/valid/excluded counts; raw arrays and revisions remain on the server.
+Exact family/date/device identities target user actions; absent/ambiguous identities
+fail a batch before any write. No schema migration or new SQL deployment is required.
+
 Canonical registry version 1 and Gym v2/revision 2 are unchanged. `PolarStore` is a separate
 server-only owner-keyed version-1 blob with realMode, jobs, sleep/nightly/continuous/PPI arrays,
 device/catalog context, request timestamps and persistent backoff. Old encrypted dev records

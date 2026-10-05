@@ -373,9 +373,12 @@ export function PolarConnection() {
           <PolarDiagnosticDetails diagnostic={status.state.contextDiagnostic} />
           <p>
             {status.trainingCount ?? 0} Polar training sessions ·{' '}
-            {status.state.counts.sleep} sleep nights ·{' '}
-            {status.state.counts.nightly} Nightly Recharge dates · Recovery
-            engine pending.
+            {status.state.recordCounts?.sleep.valid ??
+              status.state.counts.sleep}{' '}
+            valid sleep nights ·{' '}
+            {status.state.recordCounts?.sleep.excluded ?? 0} excluded Polar
+            sleep records · {status.state.counts.nightly} Nightly Recharge dates
+            · Recovery engine pending.
           </p>
           {status.state.blockedUntil > 0 && (
             <p>

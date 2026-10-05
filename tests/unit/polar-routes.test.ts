@@ -26,7 +26,57 @@ vi.mock('../../src/server/integration-repository', () => ({
   integrationRepository: mock.repo,
 }));
 import { GET, POST } from '../../src/app/api/polar/[action]/route';
+import { storePolarRows } from '../../src/server/polar-normalize';
+import { sleep } from '../helpers/polar';
 let repo: MemoryRepository;
+it('quality updates use owner/origin checks, retain raw history and expose filtered recovery without calling Polar', async () => {
+  storePolarRows(repo.polarState, 'sleep', [sleep]);
+  const before = structuredClone(repo.polarState.sleep[0]);
+  const http = vi.fn();
+  vi.stubGlobal('fetch', http);
+  const payload = {
+    records: [{ family: 'sleep', date: before.date, device: before.device }],
+    status: 'excluded',
+    reason: 'sensor_artifact',
+  };
+  const request = () =>
+    new Request(`${polarConfig.origin}/api/polar/quality`, {
+      method: 'POST',
+      headers: {
+        origin: polarConfig.origin,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  mock.origin.mockImplementationOnce(() => {
+    throw new Error('Origin rejected');
+  });
+  expect(
+    (await POST(request(), { params: Promise.resolve({ action: 'quality' }) }))
+      .status,
+  ).toBe(503);
+  expect(repo.polarState.sleep[0]).toEqual(before);
+  const response = await POST(request(), {
+    params: Promise.resolve({ action: 'quality' }),
+  });
+  expect(response.status).toBe(200);
+  expect(mock.origin).toHaveBeenCalled();
+  expect(mock.owner).toHaveBeenCalled();
+  expect(repo.polarState.sleep[0].raw).toEqual(before.raw);
+  expect(http).not.toHaveBeenCalled();
+  const recovery = await (
+    await GET(new Request(`${polarConfig.origin}/api/polar/recovery`), {
+      params: Promise.resolve({ action: 'recovery' }),
+    })
+  ).json();
+  expect(recovery).toMatchObject({
+    sleep: [],
+    recordCounts: { sleep: { provider: 1, valid: 0, excluded: 1 } },
+    history: [
+      { validityOverride: { status: 'excluded', reason: 'sensor_artifact' } },
+    ],
+  });
+});
 beforeEach(() => {
   vi.stubEnv('APP_ORIGIN', polarConfig.origin);
   vi.stubEnv('POLAR_CLIENT_ID', polarConfig.polarClientId);

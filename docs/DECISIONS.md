@@ -1,5 +1,28 @@
 # Decision log
 
+## 2026-10-05 — Generic observation validity and user authority
+
+All Polar Sleep, Nightly Recharge, continuous-HR and PPI observations support the
+same optional `validityOverride`: valid/excluded, optional reason, adjudication time
+and user authority. Missing overrides retain legacy provider eligibility. Completeness,
+sensor-quality evidence and metric availability remain separate; a valid override
+does not invent missing measurements or prove sensor accuracy. No value-based automatic
+exclusion is implemented. Future automatic flags must not overrule user adjudication.
+
+Keep overrides beside normalized observations, outside the raw payload and revisions.
+The existing date/device identity retains decisions across resync and raw revisions.
+Owner-authenticated, origin-checked `/api/polar/quality` accepts exact family/date/device
+identities, validates all requested records before saving and uses the repository's
+owner lock and version CAS. It supports disconnected retained history and never needs
+a provider request or token refresh. Restore records an explicit valid decision.
+
+`recoveryInputs` is the shared eligibility boundary for future Home/Recovery Engine
+consumers. API recovery sleep/nightly arrays are filtered; separate safe provider
+history and provider/valid/excluded counts retain transparency. Series/window queries
+also reject excluded inputs defensively, including descriptive means, coverage and
+maturity. UI valid counts describe eligibility; metric completeness still controls
+baseline counts. Recovery Engine and confidence calculations remain unimplemented.
+
 ## 2026-10-05 — Polar detail presentation without source mutation
 
 Project existing persisted rich Polar raw data on read through the same normalizer

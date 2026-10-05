@@ -285,6 +285,8 @@ function upsert<
     device: string | null;
     raw: Record<string, unknown>;
     previous: Record<string, unknown>[];
+    validityOverride?:
+      import('../domain/observation-quality').ValidityOverride | null;
   },
 >(list: T[], value: T, byDevice = true) {
   const index = list.findIndex(
@@ -293,6 +295,7 @@ function upsert<
   if (index < 0) list.push(value);
   else {
     value.previous = list[index].previous;
+    value.validityOverride = list[index].validityOverride;
     if (fingerprint(list[index].raw) !== fingerprint(value.raw))
       value.previous = [...value.previous, list[index].raw];
     list[index] = value;

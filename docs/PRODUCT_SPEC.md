@@ -2,6 +2,16 @@
 
 ## Current milestone — Polar v4 real source data
 
+Provider existence is distinct from recovery eligibility. Recovery history supports
+explicit Exclude from recovery and Restore actions with optional artifact/detection
+reasons. User adjudication is authoritative and survives resync; raw provider records
+and provenance are retained. Excluded observations do not enter recovery trends,
+averages, descriptive baselines, coverage or baseline maturity. Valid counts describe
+eligible observations; completeness and available values are checked independently.
+Future real Home, confidence and Recovery Engine consumers must use the shared filtered
+recovery-input query. They are not implemented in this milestone. Automatic quality
+checks may eventually request review but cannot silently invalidate user observations.
+
 This section supersedes earlier statements that Polar is a stub. Strava remains dormant,
 not removed; credentials for it are unnecessary to use Polar. Browser Gym/Hevy data stays
 local and authoritative. Connecting does not import automatically. Secure Integrations

@@ -40,13 +40,128 @@ const publicNightly = {
   respirationIntervalMs: 4000,
   vendor: { meanBaselineRmssd: 40 },
 };
+for (const width of [390, 430])
+  test(`Recovery validity overrides exclude and restore provider records at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    const records = [
+      {
+        ...publicSleep,
+        date: '2026-10-02',
+        validityOverride: null as null | {
+          status: 'excluded' | 'valid';
+          reason: string | null;
+          adjudicatedAt: string;
+          adjudicatedBy: 'user';
+        },
+      },
+      {
+        ...publicSleep,
+        date: '2026-10-03',
+        validityOverride: null as null | {
+          status: 'excluded' | 'valid';
+          reason: string | null;
+          adjudicatedAt: string;
+          adjudicatedBy: 'user';
+        },
+      },
+    ];
+    await page.route('**/api/polar/recovery', (r) => {
+      const valid = records.filter(
+        (s) => s.validityOverride?.status !== 'excluded',
+      );
+      return r.fulfill({
+        json: {
+          ...base,
+          sleep: valid,
+          recordCounts: {
+            sleep: {
+              provider: 2,
+              valid: valid.length,
+              excluded: 2 - valid.length,
+            },
+          },
+          history: records.map((s) => ({
+            family: 'sleep',
+            date: s.date,
+            source: 'polar',
+            device: s.device,
+            syncedAt: s.syncedAt,
+            sensorQuality: 'unknown',
+            validityOverride: s.validityOverride,
+          })),
+        },
+      });
+    });
+    await page.route('**/api/polar/quality', (r) => {
+      const body = r.request().postDataJSON();
+      expect(body.records.length).toBe(1);
+      expect(body.records[0].family).toBe('sleep');
+      const record = records.find((s) => s.date === body.records[0].date)!;
+      record.validityOverride = {
+        status: body.status,
+        reason: body.status === 'excluded' ? body.reason : null,
+        adjudicatedAt: base.asOf,
+        adjudicatedBy: 'user',
+      };
+      return r.fulfill({ json: { updated: 1 } });
+    });
+    await page.goto('/recovery');
+    await expect(
+      page.getByRole('heading', { name: '2 valid sleep nights' }),
+    ).toBeVisible();
+    await page
+      .getByText('Provider history & validity (2 records)', { exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Exclude from recovery', exact: true })
+      .first()
+      .click();
+    await expect(
+      page.getByRole('heading', { name: '1 valid sleep nights' }),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Exclude from recovery', exact: true })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: '0 valid sleep nights' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('2 Polar sleep records · 2 Polar records excluded', {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Insufficient data', { exact: true }),
+    ).toHaveCount(6);
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: '0 valid sleep nights' }),
+    ).toBeVisible();
+    await page
+      .getByText('Provider history & validity (2 records)', { exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Restore', exact: true })
+      .first()
+      .click();
+    await expect(
+      page.getByRole('heading', { name: '1 valid sleep nights' }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
 test('connected zero-night Recovery succeeds without sample fallbacks and sample view is explicit', async ({
   page,
 }) => {
   await page.route('**/api/polar/recovery', (r) => r.fulfill({ json: base }));
   await page.goto('/recovery');
   await expect(
-    page.getByRole('heading', { name: '0 nights of sleep data' }),
+    page.getByRole('heading', { name: '0 valid sleep nights' }),
   ).toBeVisible();
   await expect(
     page.getByText('DEMO · SAMPLE DATA', { exact: true }),
@@ -60,7 +175,7 @@ test('connected zero-night Recovery succeeds without sample fallbacks and sample
   ).toBeVisible();
   await page.getByRole('button', { name: 'Show real data' }).click();
   await expect(
-    page.getByRole('heading', { name: '0 nights of sleep data' }),
+    page.getByRole('heading', { name: '0 valid sleep nights' }),
   ).toBeVisible();
 });
 for (const width of [390, 430])
@@ -75,7 +190,7 @@ for (const width of [390, 430])
     );
     await page.goto('/recovery');
     await expect(
-      page.getByRole('heading', { name: '1 nights of sleep data' }),
+      page.getByRole('heading', { name: '1 valid sleep nights' }),
     ).toBeVisible();
     await expect(page.getByText('42.0 ms · 2026-10-01')).toBeVisible();
     await page

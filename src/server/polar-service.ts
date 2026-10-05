@@ -16,6 +16,7 @@ import {
 import type { IntegrationRepository } from './integration-repository';
 import type { Connection } from './strava-client';
 import { polarCalendarDate } from '../domain/polar-training-range';
+import { recoveryRecordCounts } from '../domain/recovery-inputs';
 import { PolarClient, PolarError, POLAR_PATHS } from './polar-client';
 import {
   object,
@@ -197,6 +198,7 @@ export async function polarSyncStep(
 }
 export function publicPolarState(state: PolarStore) {
   return {
+    recordCounts: recoveryRecordCounts(state),
     realMode: state.realMode,
     jobs: state.jobs,
     blockedUntil: state.blockedUntil,
