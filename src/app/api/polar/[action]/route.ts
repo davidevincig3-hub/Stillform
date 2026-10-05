@@ -68,6 +68,7 @@ export async function GET(
         authenticated: false,
         connected: false,
         missing,
+        trainingTimeZone: c.polarTimeZone,
       });
     if (missing.length)
       throw new AuthError('Polar secure configuration incomplete', 503);
@@ -83,6 +84,7 @@ export async function GET(
         connected: !!account,
         mode: c.mode,
         scopes: account?.scopes ?? [],
+        trainingTimeZone: c.polarTimeZone,
         state: publicPolarState(p.state),
         trainingCount: registry.state.sources.filter(
           (s) => s.provider === 'polar' && !s.deleted,
@@ -178,6 +180,7 @@ export async function GET(
         authenticated: false,
         connected: false,
         mode: c?.mode,
+        trainingTimeZone: c?.polarTimeZone,
       });
     return error(e);
   }

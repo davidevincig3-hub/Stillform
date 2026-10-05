@@ -30,7 +30,7 @@ it.each([400, 403, 500, 503])(
   async (status) => {
     const http = vi.fn(async (url: RequestInfo | URL) => {
       expect(String(url)).toBe(
-        `${POLAR_ENDPOINTS.api}/training-sessions/list?from=2026-09-01&to=2026-10-05`,
+        `${POLAR_ENDPOINTS.api}/training-sessions/list?from=2026-09-01T00%3A00%3A00&to=2026-10-05T00%3A00%3A00`,
       );
       return Response.json(
         {

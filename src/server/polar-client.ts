@@ -9,6 +9,10 @@ import {
   type PolarDiagnostic,
 } from '../domain/polar';
 import { sanitizedPolarBody, polarDiagnosticFamily } from './polar-diagnostics';
+import {
+  serializePolarTrainingRange,
+  DEFAULT_POLAR_TIME_ZONE,
+} from '../domain/polar-training-range';
 export const POLAR_ENDPOINTS = {
   api: 'https://www.polaraccesslink.com/v4/data',
   authorize: 'https://auth.polar.com/oauth/authorize',
@@ -57,6 +61,9 @@ export class PolarClient {
     private config: IntegrationConfig,
     private http: typeof fetch = fetch,
   ) {}
+  get trainingTimeZone() {
+    return this.config.polarTimeZone || DEFAULT_POLAR_TIME_ZONE;
+  }
   private async request(
     url: string,
     init: RequestInit,
@@ -212,7 +219,11 @@ export class PolarClient {
     const max = details ? 1 : windowDays[family];
     if (to <= from || to > addDays(from, max))
       throw new PolarError('Invalid Polar date window', 400);
-    const q = new URLSearchParams({ from, to });
+    const q = new URLSearchParams(
+      family === 'training'
+        ? serializePolarTrainingRange(from, to, this.trainingTimeZone)
+        : { from, to },
+    );
     const features = details
       ? family === 'training'
         ? TRAINING_FEATURES

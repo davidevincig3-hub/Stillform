@@ -1,4 +1,8 @@
 import 'server-only';
+import {
+  DEFAULT_POLAR_TIME_ZONE,
+  validatePolarTimeZone,
+} from '../domain/polar-training-range';
 export const STRAVA_ENDPOINTS = {
   api: 'https://www.strava.com/api/v3',
   authorize: 'https://www.strava.com/oauth/authorize',
@@ -18,6 +22,7 @@ export interface IntegrationConfig {
   secretKey: string;
   polarClientId: string;
   polarClientSecret: string;
+  polarTimeZone?: string;
   devAccessKey: string;
   webhookToken: string;
   subscriptionId: number;
@@ -58,6 +63,9 @@ export function integrationConfig(
     secretKey: env.SUPABASE_SECRET_KEY || '',
     polarClientId: env.POLAR_CLIENT_ID || '',
     polarClientSecret: env.POLAR_CLIENT_SECRET || '',
+    polarTimeZone: validatePolarTimeZone(
+      env.POLAR_TIME_ZONE || DEFAULT_POLAR_TIME_ZONE,
+    ),
     devAccessKey: env.DEV_INTEGRATION_ACCESS_KEY || '',
     webhookToken: env.STRAVA_WEBHOOK_VERIFY_TOKEN || '',
     subscriptionId: Number(env.STRAVA_WEBHOOK_SUBSCRIPTION_ID || 0),

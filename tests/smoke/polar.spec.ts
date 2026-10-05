@@ -159,6 +159,70 @@ test('Polar is independently unconfigured and exposes only missing variable name
   expect(JSON.stringify(b)).not.toContain('accessToken');
 });
 
+test('training dates follow configured Rome calendar instead of browser or UTC date, and remain UI dates', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    timezoneId: 'America/Los_Angeles',
+    baseURL: test.info().project.use.baseURL,
+  });
+  try {
+    const page = await context.newPage();
+    await page.clock.install({ time: new Date('2026-03-28T23:30:00Z') });
+    const state = {
+      ...emptyPolarStore(),
+      counts: { sleep: 0, nightly: 0, continuous: 0, ppi: 0 },
+    };
+    await page.route('**/api/polar/status', (r) =>
+      r.fulfill({
+        json: {
+          configured: true,
+          authenticated: true,
+          connected: true,
+          trainingTimeZone: 'Europe/Rome',
+          scopes: ['training_sessions:read'],
+          state,
+          trainingCount: 0,
+        },
+      }),
+    );
+    await page.route('**/api/polar/sync', async (r) => {
+      const body = r.request().postDataJSON();
+      expect(body.from).toBe('2026-09-01');
+      expect(body.to).toBe('2026-10-05');
+      state.jobs.training = {
+        ...newPolarJob(body.from, body.to),
+        done: true,
+        next: body.to,
+        requests: 1,
+      };
+      await r.fulfill({ json: state });
+    });
+    await page.goto('/integrations');
+    await expect(
+      page.getByLabel('From (inclusive)', { exact: true }),
+    ).toHaveValue('2025-12-29');
+    await expect(
+      page.getByLabel('To (exclusive)', { exact: true }),
+    ).toHaveValue('2026-03-30');
+    await expect(
+      page.getByText(/Training calendar dates: Europe\/Rome/),
+    ).toBeVisible();
+    await page
+      .getByLabel('From (inclusive)', { exact: true })
+      .fill('2026-09-01');
+    await page.getByLabel('To (exclusive)', { exact: true }).fill('2026-10-05');
+    await page
+      .getByRole('button', { name: 'Sync training sessions', exact: true })
+      .click();
+    await expect(
+      page.getByText(/Zero available records is a successful result/),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
 for (const width of [390, 430])
   test(`Polar provider diagnostics remain readable at ${width}px`, async ({
     page,

@@ -1,5 +1,22 @@
 # Decision log
 
+## 2026-10-05 — Verified Polar training local datetime boundaries
+
+Live read-only probes established that training list accepts `YYYY-MM-DDT00:00:00`,
+but rejects date-only, `Z`, and explicit `+02:00` forms. Use a dedicated training
+range serializer for discovery and rich detail requests. It validates calendar
+dates and an explicit IANA timezone, then preserves those dates as local midnight,
+inclusive start / exclusive end, without UTC conversion. `POLAR_TIME_ZONE` defaults
+to Europe/Rome; show it in the UI and use it for default dates and future-date checks.
+DST does not change calendar chunk boundaries; preserve 90-day discovery and one-day
+detail limits. The query has no timezone parameter: do not claim arbitrary instant
+filtering or verified travel-zone behavior from these local datetime probes.
+
+Review families independently: one-day date-only sleeps, nightly, PPI and continuous
+queries each returned 200. They retain their distinct existing serializers. Final
+adapter verification returned sports/devices 200 and training 200 with five sessions.
+No OAuth/refresh, imported history, metadata or checkpoint writes occurred.
+
 ## 2026-10-05 — Polar diagnostics and refresh persistence
 
 Retain bounded sanitized provider diagnostics in sync checkpoints/context status

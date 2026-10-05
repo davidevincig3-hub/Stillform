@@ -309,10 +309,22 @@ failed authentication retains credentials until explicit disconnect. PostgREST
 minimal-write responses may be empty HTTP 200/201 as well as 204.
 
 Live verification on 2026-10-05: normal refresh succeeded and read-only sports/devices
-returned 200. Training discovery with date-only `2026-09-01` / `2026-10-05` returned
-400: `Value for key 'from' could not be parsed as datetime`. Date serialization
-needs a separate verified refinement before training sync can succeed; no personal
-activity or context data was imported during this diagnostic run.
+returned 200. Training now serializes UI dates to ISO **local datetimes**:
+`2026-09-01T00:00:00` inclusive to `2026-10-05T00:00:00` exclusive. The live
+backend rejected date-only, explicit-offset and `Z` forms; the accepted local form
+returned 200 with five sessions. `features` stays omitted for discovery. No personal
+activity/context data was imported, and credentials were unchanged during range verification.
+
+`POLAR_TIME_ZONE` selects the training calendar (IANA name; default `Europe/Rome`),
+shown in Integrations. Default dates and future-range validation use that zone.
+The dedicated serializer preserves wall-clock midnight boundaries across DST;
+it does not convert selected dates into UTC dates or assume 24 elapsed hours per day.
+Polar accepts no offset in this observed training query form; no unsupported timezone
+parameter is sent. Calendar dates follow provider-local session timestamps; this is
+not a claim of an arbitrary timezone-aware instant-filter API, especially for travel.
+The 90-calendar-day discovery / one-day detail limits and contiguous chunks remain.
+Sleep, Nightly Recharge, PPI and continuous samples independently returned 200 with
+their existing date-only one-day queries, which stay unchanged.
 
 Automated tests use synthetic
 responses only. Gym/Hevy browser data, backups and Git history are unchanged. Strava client

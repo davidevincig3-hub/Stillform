@@ -6,6 +6,10 @@ import { realHistory } from '@/analytics/gym';
 import { addDays, polarFamilies, type PolarFamily } from '@/domain/polar';
 import type { publicPolarState } from '@/server/polar-service';
 import { PolarDiagnosticDetails } from './polar-diagnostic';
+import {
+  DEFAULT_POLAR_TIME_ZONE,
+  polarCalendarDate,
+} from '@/domain/polar-training-range';
 interface Status {
   configured: boolean;
   authenticated: boolean;
@@ -15,6 +19,7 @@ interface Status {
   scopes?: string[];
   state?: ReturnType<typeof publicPolarState>;
   trainingCount?: number;
+  trainingTimeZone?: string;
 }
 async function api(action: string, input?: unknown) {
   const r = await fetch(
@@ -38,12 +43,8 @@ export function PolarConnection() {
     [message, setMessage] = useState(''),
     [ownAccount, setOwnAccount] = useState(false),
     [disconnect, setDisconnect] = useState(false),
-    [from, setFrom] = useState(() =>
-      addDays(new Date().toISOString().slice(0, 10), -90),
-    ),
-    [to, setTo] = useState(() =>
-      addDays(new Date().toISOString().slice(0, 10), 1),
-    ),
+    [from, setFrom] = useState(''),
+    [to, setTo] = useState(''),
     [email, setEmail] = useState(''),
     [password, setPassword] = useState(''),
     [accessKey, setAccessKey] = useState('');
@@ -51,7 +52,15 @@ export function PolarConnection() {
     let alive = true;
     api('status')
       .then((s) => {
-        if (alive) setStatus(s);
+        if (alive) {
+          setStatus(s);
+          const today = polarCalendarDate(
+            new Date(),
+            s.trainingTimeZone || DEFAULT_POLAR_TIME_ZONE,
+          );
+          setFrom(addDays(today, -90));
+          setTo(addDays(today, 1));
+        }
       })
       .catch(() => {
         if (alive) setMessage('Polar status unavailable.');
@@ -265,6 +274,11 @@ export function PolarConnection() {
               <p className="caption">
                 Requested range does not guarantee historical availability. This
                 is Polar history available, not your complete activity history.
+              </p>
+              <p className="caption">
+                Training calendar dates:{' '}
+                {status.trainingTimeZone || DEFAULT_POLAR_TIME_ZONE}. Start is
+                inclusive; end is exclusive, at local midnight.
               </p>
               <div className="row start">
                 <button

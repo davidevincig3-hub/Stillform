@@ -15,6 +15,7 @@ import {
 } from '../integrations/activity-matching';
 import type { IntegrationRepository } from './integration-repository';
 import type { Connection } from './strava-client';
+import { polarCalendarDate } from '../domain/polar-training-range';
 import { PolarClient, PolarError, POLAR_PATHS } from './polar-client';
 import {
   array,
@@ -85,11 +86,7 @@ const syncInput = z
   })
   .refine((v) => !v.restart || (!!v.from && !!v.to), 'New sync requires dates')
   .refine(
-    (v) =>
-      !v.from ||
-      !v.to ||
-      (v.from < v.to &&
-        v.to <= addDays(new Date().toISOString().slice(0, 10), 1)),
+    (v) => !v.from || !v.to || v.from < v.to,
     'Use a valid past range; to is exclusive',
   );
 export async function polarSyncStep(
@@ -99,6 +96,11 @@ export async function polarSyncStep(
   input: unknown,
 ) {
   const body = syncInput.parse(input);
+  if (
+    body.to &&
+    body.to > addDays(polarCalendarDate(new Date(), client.trainingTimeZone), 1)
+  )
+    throw new PolarError('Use a valid past range; to is exclusive', 400);
   return repo.lock(owner, async () => {
     const s = await repo.readPolar(owner),
       state = s.state;

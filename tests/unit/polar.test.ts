@@ -192,7 +192,8 @@ describe('bounded resumable sparse backfill', () => {
       http = vi.fn(async (url: RequestInfo | URL) =>
         json({
           trainingSessions:
-            new URL(String(url)).searchParams.get('from') === '2026-04-05'
+            new URL(String(url)).searchParams.get('from') ===
+            '2026-04-05T00:00:00'
               ? []
               : [training()],
         }),

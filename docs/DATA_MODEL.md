@@ -1,5 +1,13 @@
 # Data model
 
+Polar training range boundaries are UI calendar dates, serialized by
+`src/domain/polar-training-range.ts` to provider-accepted ISO local datetimes at
+midnight. Start is inclusive and end exclusive; checkpoints remain date-only.
+The configured IANA training calendar (`POLAR_TIME_ZONE`, default Europe/Rome)
+governs current-date defaults/validation. No UTC date shift or fixed 24-hour DST
+arithmetic is used; no unsupported offset/zone parameter is sent to Polar.
+Other physiological families keep independently verified date-only ranges.
+
 ## Polar source storage version 1 (current extension)
 
 Canonical registry version 1 and Gym v2/revision 2 are unchanged. `PolarStore` is a separate
