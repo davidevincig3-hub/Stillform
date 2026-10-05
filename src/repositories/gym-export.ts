@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { gymStoreSchema, type GymStore } from './gym-storage';
+import { gymStoreSchema, initialGymStore, type GymStore } from './gym-storage';
 import { realHistory } from '../analytics/gym';
 export const gymBackupSchema = z.object({
   format: z.literal('stillform-gym'),
@@ -20,6 +20,37 @@ export function exportGymJson(store: GymStore) {
     null,
     2,
   );
+}
+export function canBootstrapGym(store: GymStore) {
+  return (
+    JSON.stringify(gymStoreSchema.parse(store)) ===
+    JSON.stringify(gymStoreSchema.parse(initialGymStore()))
+  );
+}
+export function previewGymBootstrap(raw: string, current: GymStore) {
+  if (!canBootstrapGym(current))
+    throw new Error(
+      'Restore is limited to an empty, unmodified Gym browser. Existing data will not be overwritten or merged.',
+    );
+  if (raw.length > 50 * 1024 * 1024) throw new Error('Backup exceeds 50 MB');
+  const backup = gymBackupSchema.parse(JSON.parse(raw));
+  return {
+    data: backup.data,
+    base: JSON.stringify(current),
+    exportedAt: backup.exportedAt,
+  };
+}
+export function commitGymBootstrap(
+  plan: ReturnType<typeof previewGymBootstrap>,
+  current: GymStore,
+  approved: boolean,
+  save: (store: GymStore) => boolean,
+) {
+  if (!approved) throw new Error('Review and confirm the backup first');
+  if (!canBootstrapGym(current) || JSON.stringify(current) !== plan.base)
+    throw new Error('Gym changed since preview. Nothing restored.');
+  if (!save(gymStoreSchema.parse(plan.data)))
+    throw new Error('Backup could not be saved. Nothing restored.');
 }
 function csvCell(value: unknown) {
   let text = String(value ?? '');

@@ -1,3 +1,4 @@
+import { newId } from '../domain/id';
 import {
   setSchema,
   workoutSchema,
@@ -27,7 +28,7 @@ export const emptyStore: WorkoutStore = {
 export const storageKey = 'adaptive-coach.workouts.v1';
 export function blankSet(): WorkoutSet {
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     weight: null,
     reps: null,
     rir: null,
@@ -39,13 +40,13 @@ export function blankSet(): WorkoutSet {
 }
 export function startWorkout(routine: Routine): GymSession {
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     routineName: routine.name,
     startedAt: new Date().toISOString(),
     endedAt: null,
     status: 'active',
     exercises: routine.exercises.map((e) => ({
-      id: crypto.randomUUID(),
+      id: newId(),
       name: e.name,
       muscleGroup: e.muscleGroup,
       previous: e.previous,

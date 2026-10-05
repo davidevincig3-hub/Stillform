@@ -1,3 +1,4 @@
+import { newId } from '../domain/id';
 import {
   libraryExerciseSchema,
   type Exercise,
@@ -339,6 +340,10 @@ export async function previewHevyImport(
   timeZone = 'Europe/Rome',
   parser: HevyCsvParser = verifiedHevyParser,
 ): Promise<HevyParsed> {
+  if (!crypto.subtle)
+    throw new Error(
+      'Hevy CSV preview needs a secure context. Use localhost for CSV import, then transfer a Stillform JSON backup to the empty phone browser.',
+    );
   const parsed = parser.parse(csv, timeZone);
   for (const w of parsed.workouts) {
     const source = JSON.stringify([
@@ -404,6 +409,7 @@ export interface HevyPlan {
     workouts: number;
     sets: number;
     duplicates: number;
+    unchanged: number;
     skippedSets: number;
     customExercises: number;
     mappedNames: number;
@@ -434,7 +440,7 @@ export function buildHevyPlan(
     )
   )
     throw new Error('Resolve every exercise mapping');
-  const batchId = crypto.randomUUID(),
+  const batchId = newId(),
     exercises = store.exercises.map((e) => libraryExerciseSchema.parse(e)),
     lookup = new Map<string, Exercise>();
   for (const m of mappings) {
@@ -464,6 +470,7 @@ export function buildHevyPlan(
     lookup.set(name, exercise);
   }
   let duplicates = 0,
+    unchanged = 0,
     skippedSets = 0;
   const workouts: GymWorkout[] = [];
   for (const w of parsed.workouts) {
@@ -475,6 +482,7 @@ export function buildHevyPlan(
       (status === 'ambiguous' && decisions[w.fingerprint] === 'skip')
     ) {
       duplicates++;
+      if (status === 'duplicate') unchanged++;
       skippedSets += w.rows.length;
       continue;
     }
@@ -564,6 +572,7 @@ export function buildHevyPlan(
       0,
     ),
     duplicates,
+    unchanged,
     skippedSets,
     customExercises: exercises.length - store.exercises.length,
     mappedNames: parsed.names.length,

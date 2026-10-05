@@ -77,6 +77,20 @@ select {
 .library-list {
   margin-top: 24px;
 }
+.exercise-picker {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.exercise-picker input,
+.exercise-picker select {
+  width: 100%;
+  min-width: 0;
+}
+.recent-exercises .detail-set > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 form.card > input {
   width: 100%;
   min-height: 44px;

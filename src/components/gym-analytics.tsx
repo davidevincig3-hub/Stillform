@@ -1,5 +1,4 @@
 'use client';
-import { ExerciseHistorySearch } from './exercise-history-search';
 import { useWorkout } from './workout-provider';
 import { weeklyGymSummary } from '@/analytics/gym';
 export function GymAnalytics() {
@@ -79,7 +78,6 @@ export function GymAnalytics() {
           )}
         </section>
       </div>
-      <ExerciseHistorySearch />
     </>
   );
 }

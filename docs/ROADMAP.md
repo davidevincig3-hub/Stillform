@@ -1,5 +1,11 @@
 # Roadmap
 
+Daily Gym blockers addressed: explicit trusted-LAN dev mode, reviewed JSON bootstrap
+into an empty phone browser, real-history recent/frequent exercise shortlist with
+pin/dismiss controls, and synthetic verification of incremental Hevy export replay.
+Full cross-device Gym merge/cloud sync and edited-Hevy-session reconciliation remain
+future work. Next Gym analytics should build on the existing canonical IDs and real-only gates.
+
 ## Current status — Recovery Engine V1 implemented
 
 Recovery Engine V1 is now implemented: personal robust baselines, actual-day coverage,
@@ -25,7 +31,7 @@ Do not require a historic sleep baseline to start collection.
 Follow-ups: authenticated physiological export/deletion, normalized/indexed larger-history
 storage, client-wide distributed budget and operational retry worker before multi-user hosting,
 continuous/PPI exploratory charts, explicit account-switch support if a stable identity contract
-becomes available, Gym cloud/reconciliation with user-approved migration and JSON restore.
+becomes available, Gym cloud/reconciliation with user-approved migration and populated-store JSON merge.
 After real observation quality is understood, evaluate the Recovery V1 heuristics and
 comparable-running analytics separately, then Plan decisions and grounded Coach/Consensus.
 
@@ -34,7 +40,7 @@ comparable-running analytics separately, then Plan decisions and grounded Coach/
 Five pages, local workout flow, sample charts, goals, choice demo, PWA, schema and
 contracts. Gym V1 Real adds routine/custom-exercise management, identity-based actual
 previous exposures, completed/detail histories, descriptive analytics and JSON/CSV
-export. Migration isolates unverified legacy data. Next: validated JSON restore,
+export. Migration isolates unverified legacy data. Next: populated-store JSON merge,
 multi-tab protection and offline resilience. Verified Hevy import with
 mapping/duplicate preview is complete. Milestone: mobile
 reload/edit/leave/return/finish/discard end-to-end tests.
@@ -72,7 +78,7 @@ backup/observability, performance and full offline workflow testing.
 
 Verified Italian Hevy CSV parser, review/mapping/duplicate/confirmation UI, provenance,
 atomic local batches and repeat-import protection are implemented. Real mapped history
-feeds Gym exposures and descriptive analytics. Next: validated JSON backup restore
+feeds Gym exposures and descriptive analytics. Next: validated populated-store JSON merge
 with preview/confirmation and conflict handling; then reviewed muscle-metadata backfill,
 batch undo and broader export-version/timezone support. Strava requires explicit configured authorization; Hevy remains a local-file import.
 
@@ -91,4 +97,4 @@ in the actual database, authorize one real account deliberately, backfill with m
 and inspect real HR/GPS/laps missingness without enabling physiological decisions. Then add
 operational webhook worker/retry observability, canonical export/deletion and field-precedence
 policy, with explicit Gym reconciliation/cloud migration designed separately. Existing JSON
-restore/preview, multi-tab coordination and Gym metadata review remain valuable later tasks.
+merge/preview, multi-tab coordination and Gym metadata review remain valuable later tasks.

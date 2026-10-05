@@ -1,5 +1,16 @@
 # Data model
 
+## Gym daily-use extension
+
+Gym storage remains `adaptive-coach.gym.v2`, version 2, now schemaRevision 3.
+Revisions 1/2 decode into revision 3 with empty `exercisePreferences` keyed by canonical
+exercise ID, each with pinned/dismissed booleans. Unknown IDs/future revisions are rejected.
+History, mappings and legacy gates are unchanged. FormatVersion 1 JSON includes these
+preferences and supports reviewed atomic bootstrap into an entirely empty store.
+No overwrite, cross-device merge or automatic routine inference is implemented.
+Recent exercise counts/ranking are computed from confirmed history, not persisted
+copies. See [mobile Gym setup](MOBILE_GYM.md) for cutoff/timezone, ranking and import semantics.
+
 ## Recovery Engine V1 (computed, not persisted)
 
 `RecoveryEngineInput` holds a configured calendar/as-of date, separate metric protocols,

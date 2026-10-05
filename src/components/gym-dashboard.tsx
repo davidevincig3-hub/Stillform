@@ -1,10 +1,13 @@
 'use client';
+import { newId } from '@/domain/id';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import { PageHeading } from './assessment';
 import { GymHistory } from './gym-history';
+import { RecentExercises } from './recent-exercises';
+import { ExerciseHistorySearch } from './exercise-history-search';
 import { GymAnalytics } from './gym-analytics';
 import { GymExportControls } from './gym-export-controls';
 import { routineTemplates } from '@/domain/gym';
@@ -39,6 +42,32 @@ export function GymDashboard() {
         title="Train. Log. Learn."
         subtitle="Your real workouts, saved locally. No sample performance in your personal history."
       />
+      <div className="start-workout">
+        {store.active ? (
+          <Link className="primary" href="/gym/workout">
+            Return to {store.active.routineName} workout →
+          </Link>
+        ) : (
+          <button
+            className="primary"
+            disabled={!ready || !chosen || !chosen.exercises.length}
+            onClick={() =>
+              run(() => {
+                if (chosen && save(startGymWorkout(store, chosen))) {
+                  router.push('/gym/workout');
+                  return true;
+                }
+                return false;
+              })
+            }
+          >
+            Start Workout →
+          </button>
+        )}
+        <span className="caption">
+          Blank weights · Optional effort · HR not required
+        </span>
+      </div>
       <div className="section-heading">
         <h2>Your routines</h2>
         <Link href="/gym/routines/new" className="primary">
@@ -129,32 +158,6 @@ export function GymDashboard() {
           </div>
         </section>
       )}
-      <div className="start-workout">
-        {store.active ? (
-          <Link className="primary" href="/gym/workout">
-            Return to {store.active.routineName} workout →
-          </Link>
-        ) : (
-          <button
-            className="primary"
-            disabled={!ready || !chosen || !chosen.exercises.length}
-            onClick={() =>
-              run(() => {
-                if (chosen && save(startGymWorkout(store, chosen))) {
-                  router.push('/gym/workout');
-                  return true;
-                }
-                return false;
-              })
-            }
-          >
-            Start Workout →
-          </button>
-        )}
-        <span className="caption">
-          Blank weights · Optional effort · HR not required
-        </span>
-      </div>
       <details className="card">
         <summary>Routine templates · structure only</summary>
         <p className="muted">
@@ -170,7 +173,7 @@ export function GymDashboard() {
               onClick={() =>
                 run(() => {
                   const now = new Date().toISOString();
-                  const id = crypto.randomUUID();
+                  const id = newId();
                   const result = save(
                     saveRoutine(store, {
                       id,
@@ -179,7 +182,7 @@ export function GymDashboard() {
                       createdAt: now,
                       updatedAt: now,
                       exercises: t.exerciseIds.map((exerciseId) => ({
-                        id: crypto.randomUUID(),
+                        id: newId(),
                         exerciseId,
                         defaultSets: 3,
                         repRange: null,
@@ -202,8 +205,13 @@ export function GymDashboard() {
           {error}
         </p>
       )}
-      <GymAnalytics />
+      <RecentExercises />
       <GymHistory />
+      <ExerciseHistorySearch />
+      <details className="card">
+        <summary>Descriptive analytics</summary>
+        <GymAnalytics />
+      </details>
       {store.legacyArchive.length > 0 && (
         <section className="card">
           <h2>Older V1 records · review required</h2>

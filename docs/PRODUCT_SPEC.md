@@ -1,5 +1,16 @@
 # Product specification
 
+## Daily Gym usability
+
+Gym prioritizes Start/Resume, saved routines, recent/frequent exercises, three latest
+completed workouts and searchable full library/history. Suggestions use real completed
+history since 2026-09-01 in Europe/Rome; counts and recency-weighted exposure ranking
+never infer routines or muscle metadata. Users pin, dismiss and restore suggestions.
+Routine/active-workout editors reuse the shortlist for immediate additions by canonical ID.
+Trusted-LAN development and reviewed empty-browser JSON bootstrap support phone logging;
+storage is still per browser/origin. Newer Hevy exports add new sessions, skip unchanged
+fingerprints and require review of edited prior sessions. See [mobile setup](MOBILE_GYM.md).
+
 ## Current milestone — Polar v4 real source data
 
 Recovery Engine V1 supersedes earlier statements that no engine exists. Home recovery

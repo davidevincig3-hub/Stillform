@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import { PreviousPerformance } from './previous-performance';
+import { RecentExercises } from './recent-exercises';
+import { ExercisePicker } from './exercise-picker';
 import { blankSet } from '@/repositories/workout-storage';
 import {
   finishGymWorkout,
@@ -33,6 +35,14 @@ export function ActiveWorkoutScreen() {
     );
   function update(session: GymWorkout) {
     return save({ ...store, active: session });
+  }
+  function addExercise(id: string) {
+    const exercise = store.exercises.find((e) => e.id === id);
+    if (exercise && active)
+      update({
+        ...active,
+        exercises: [...active.exercises, workoutExercise(exercise)],
+      });
   }
   function changeSet(
     exerciseId: string,
@@ -232,32 +242,19 @@ export function ActiveWorkoutScreen() {
           </button>
         </section>
       ))}
+      <RecentExercises compact onAdd={addExercise} />
       <section className="card">
-        <label htmlFor="workout-exercise">Add an exercise</label>
+        <ExercisePicker
+          id="workout-exercise"
+          label="Add an exercise"
+          value={selectedExercise}
+          onChange={setSelectedExercise}
+        />
         <div className="row start">
-          <select
-            id="workout-exercise"
-            value={selectedExercise}
-            onChange={(e) => setSelectedExercise(e.target.value)}
-          >
-            {store.exercises.map((e) => (
-              <option value={e.id} key={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </select>
           <button
             className="secondary"
-            onClick={() => {
-              const exercise = store.exercises.find(
-                (e) => e.id === selectedExercise,
-              );
-              if (exercise)
-                update({
-                  ...active,
-                  exercises: [...active.exercises, workoutExercise(exercise)],
-                });
-            }}
+            disabled={!selectedExercise}
+            onClick={() => addExercise(selectedExercise)}
           >
             + Add exercise
           </button>

@@ -20,7 +20,7 @@ export function ExerciseHistorySearch({ full = false }: { full?: boolean }) {
       Math.max(0, Math.ceil(results.length / size) - 1),
     );
   return (
-    <section className="card">
+    <section className="card" data-testid="exercise-history-search">
       <h3>Exercise performance history</h3>
       <p className="caption">
         Real exposures: load + reps + effort. No performance score.

@@ -1,5 +1,24 @@
 # Decision log
 
+## 2026-10-06 — LAN Gym access, recent exercises and incremental continuity
+
+Expose development only through an explicit LAN launcher; default dev binds loopback.
+Detect/validate local RFC1918 IPv4 hosts, refuse ambiguous selection and never wildcard
+development origins or relax integration CSRF/authentication. Firewall rules remain manual,
+Private profile and local subnet. LAN HTTP uses cryptographic UUID fallback; CSV hashing
+still requires localhost/secure context and never sends private input to a hashing server.
+Per-origin storage requires an explicit reviewed JSON copy into an empty phone store,
+preserving IDs/mappings/history/preferences; do not silently merge divergent browsers.
+
+Rank exercise navigation by summed exponentially decayed exposures (28-day half-life),
+not workout titles, weights or anatomical inference. User pins override ordering and
+dismissals hide suggestions reversibly. Count one exposure per real workout and recorded
+sets across repeated blocks; exclude demos, unverified history, future dates and pre-cutoff
+calendar dates. Preferences use additive schema revision 3 with V1/V2 migration retained.
+Hevy's existing workout-relative fingerprints survive new export sessions. Report exact
+unchanged sessions separately from reviewed skips. Altered prior sessions remain ambiguous;
+no automatic historical set merge can be justified without stable source workout IDs.
+
 ## 2026-10-05 — Recovery Engine V1, conservative personal statistical patterns
 
 Use a pure versioned engine and one Home/Recovery input/render path. Never persist a

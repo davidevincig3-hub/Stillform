@@ -213,14 +213,20 @@ test('Gym main has three recent workouts and search-first exercise history; full
   await expect(summaries).toHaveCount(3);
   await expect(summaries.first()).toContainText('Synthetic workout 029');
   await expect(
-    page.getByRole('link', { name: /Synthetic exercise/ }),
+    page
+      .getByTestId('exercise-history-search')
+      .getByRole('link', { name: /Synthetic exercise/ }),
   ).toHaveCount(3);
   await page.getByLabel('Search exercise history').fill('exercise 126');
   await expect(
-    page.getByRole('link', { name: /Synthetic exercise 126/ }),
+    page
+      .getByTestId('exercise-history-search')
+      .getByRole('link', { name: /Synthetic exercise 126/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole('link', { name: /Synthetic exercise/ }),
+    page
+      .getByTestId('exercise-history-search')
+      .getByRole('link', { name: /Synthetic exercise/ }),
   ).toHaveCount(1);
   await page
     .getByRole('link', { name: /Browse all exercise histories/ })

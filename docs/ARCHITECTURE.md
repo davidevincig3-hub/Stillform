@@ -1,5 +1,15 @@
 # Architecture
 
+Daily Gym use: `analytics/gym-shortlist.ts` computes exposure/set counts and recency-weighted
+ranking by stable exercise ID. Shared recent-exercise and searchable picker components
+serve Gym, routine editor and active workout. `exercisePreferences` are local schema
+revision 3; backup and Hevy plans preserve them. `gym-export.ts` validates JSON bootstrap
+with empty-store and stale-preview gates before one atomic write. `domain/id.ts` uses
+cryptographic UUID creation over LAN HTTP without requiring secure-context randomUUID.
+`scripts/dev-lan.mjs` detects actual private IPv4 interfaces and explicitly launches Next
+on LAN with one allowed development hostname. Integration origin/auth checks remain localhost.
+See [mobile setup](MOBILE_GYM.md); no cloud synchronization is implied by shared LAN access.
+
 Recovery quality uses a shared domain override schema (`observation-quality.ts`) and
 filtered query boundary (`recovery-inputs.ts`) for Sleep/Nightly/continuous/PPI. Server
 `recovery-quality.ts` owns validated, locked/CAS user adjudication and public projections.

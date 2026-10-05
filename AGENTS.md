@@ -4,8 +4,8 @@
 
 Stillform is a Next.js App Router / React / strict TypeScript / Tailwind / Recharts
 application. Use pnpm and preserve its lockfile. Read `docs/PRODUCT_SPEC.md` and
-`docs/DECISIONS.md` before architectural changes. Supabase SQL is intended but
-intended for configured deployments. Polar v4 and dormant Strava OAuth, authenticated persistence and canonical activity sync are implemented server-side. Polar live ingestion is verified for the current owner. Recovery Engine V1 provides deterministic personal-baseline patterns with explicitly unvalidated product heuristics; Calendar, automated training decisions and AI remain stubs.
+`docs/DECISIONS.md` before architectural changes. Supabase SQL is intended for
+configured deployments. Polar v4 and dormant Strava OAuth, authenticated persistence and canonical activity sync are implemented server-side. Polar live ingestion is verified for the current owner. Recovery Engine V1 provides deterministic personal-baseline patterns with explicitly unvalidated product heuristics; Calendar, automated training decisions and AI remain stubs.
 Gym logging and descriptive analytics use confirmed real local data.
 
 ## Working practices
@@ -44,8 +44,10 @@ Gym logging and descriptive analytics use confirmed real local data.
 ## Gym persistence
 
 Current Gym domain is `src/domain/gym.ts`; storage uses `adaptive-coach.gym.v2`
-(version 2, schemaRevision 2). Retain legacy V1 decoder and tests. Old unmarked records require review
+(version 2, schemaRevision 3: ID-keyed pinned/dismissed preferences). Retain legacy V1 decoder and tests. Old unmarked records require review
 before entering personal history; discard all sample previous-performance strings.
+Desktop development binds localhost; `pnpm dev:lan` explicitly enables a trusted LAN.
+Gym storage is per browser/origin; JSON bootstrap is only for an empty store.
 Real queries filter completed confirmed-user origin and use stable exercise IDs.
 Preserve routine/exercise snapshots, JSON formatVersion 1 and CSV export safety.
 Never fill insufficient personal data with seeds. Hevy uses verified parsing,

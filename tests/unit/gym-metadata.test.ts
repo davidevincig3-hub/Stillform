@@ -41,7 +41,7 @@ describe('canonical nullable muscle metadata', () => {
         exercises: [...initialGymStore().exercises, raw],
       };
       const store = parseGymStore(JSON.stringify(old));
-      expect(store.schemaRevision).toBe(2);
+      expect(store.schemaRevision).toBe(3);
       expect(store.exercises.at(-1)?.primaryMuscleGroup).toBeNull();
       expect(store.exercises[0].primaryMuscleGroup).toBe('Chest');
     },
@@ -72,7 +72,7 @@ describe('canonical nullable muscle metadata', () => {
     ).toThrow();
     expect(() =>
       parseGymStore(
-        JSON.stringify({ ...initialGymStore(), schemaRevision: 3 }),
+        JSON.stringify({ ...initialGymStore(), schemaRevision: 4 }),
       ),
     ).toThrow();
   });

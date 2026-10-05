@@ -411,6 +411,74 @@ describe('source edge cases and domain boundaries', () => {
   });
 });
 
+it('newer full exports add only new sessions/sets; reordered workout groups remain unchanged and edited sessions require review', async () => {
+  const oldRow = {
+    start_time: '01 set 2026, 18:00',
+    end_time: '01 set 2026, 19:00',
+  };
+  const newRow = {
+    start_time: '06 ott 2026, 18:00',
+    end_time: '06 ott 2026, 19:00',
+  };
+  const oldParsed = await previewHevyImport(
+    syntheticCsv([oldRow, { ...oldRow, set_index: '1' }]),
+  );
+  const base = buildHevyPlan(
+    initialGymStore(),
+    oldParsed,
+    mappings(oldParsed.names),
+    {},
+  ).store;
+  const oldSnapshot = structuredClone(base.history);
+  const newer = await previewHevyImport(
+    syntheticCsv([
+      newRow,
+      { ...newRow, set_index: '1' },
+      oldRow,
+      { ...oldRow, set_index: '1' },
+    ]),
+  );
+  expect(newer.workouts[0].fingerprint).toBe(oldParsed.workouts[0].fingerprint);
+  const plan = buildHevyPlan(base, newer, initialMappings(newer, base), {});
+  expect(plan.summary).toMatchObject({
+    workouts: 1,
+    sets: 2,
+    duplicates: 1,
+    unchanged: 1,
+    skippedSets: 2,
+    customExercises: 0,
+  });
+  expect(plan.store.history.find((w) => w.id === oldSnapshot[0].id)).toEqual(
+    oldSnapshot[0],
+  );
+  expect(plan.store.exercises).toEqual(base.exercises);
+  const replay = buildHevyPlan(
+    plan.store,
+    newer,
+    initialMappings(newer, plan.store),
+    {},
+  );
+  expect(replay.summary).toMatchObject({
+    workouts: 0,
+    sets: 0,
+    duplicates: 2,
+    unchanged: 2,
+  });
+  expect(replay.store.history).toEqual(plan.store.history);
+  const edited = await previewHevyImport(
+    syntheticCsv([oldRow, { ...oldRow, set_index: '1', reps: '12' }]),
+  );
+  expect(duplicateStatus(edited.workouts[0], base, edited)).toBe('ambiguous');
+  expect(() =>
+    buildHevyPlan(base, edited, initialMappings(edited, base), {}),
+  ).toThrow('Review possible duplicates');
+  const skipped = buildHevyPlan(base, edited, initialMappings(edited, base), {
+    [edited.workouts[0].fingerprint]: 'skip',
+  });
+  expect(skipped.summary).toMatchObject({ workouts: 0, sets: 0, unchanged: 0 });
+  expect(skipped.store.history).toEqual(oldSnapshot);
+});
+
 it('deliberate aliases may share a new custom identity even before it is created', async () => {
   const p = await previewHevyImport(
     syntheticCsv([

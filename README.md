@@ -39,6 +39,15 @@ pnpm dev
 
 Open http://localhost:3000. No `.env` is required. `.env.example` documents optional secure Polar/Strava/Supabase setup below.
 
+For a phone on the same trusted private LAN, run `pnpm lan:url`, stop the existing
+server and run `pnpm dev:lan`. Open the printed `http://<private-ip>:3000/gym`.
+`pnpm dev` binds only localhost; LAN exposure is explicit. See
+[mobile Gym setup](docs/MOBILE_GYM.md) for Windows firewall steps, JSON bootstrap
+into an empty phone browser, per-origin storage and secure-context limitations.
+Gym offers a real-history shortlist since 2026-09-01 with pins/dismissals and
+exposure/set counts. Incremental Hevy exports skip unchanged fingerprints;
+edited existing sessions require review, never silent merging.
+
 ```sh
 pnpm typecheck
 pnpm lint
@@ -89,7 +98,8 @@ next successful edit. Unsupported/corrupt storage is preserved, with writes bloc
 
 JSON backup format `stillform-gym`, formatVersion 1, contains the full validated
 version-2 store: exercise library, routines/structure, active workout, real history
-and separately marked legacy archive. JSON restore is not enabled yet. CSV exports
+and separately marked legacy archive. Reviewed JSON bootstrap is available only
+into an empty, unmodified browser store; populated-store restore/merge is unavailable. CSV exports
 all set rows from confirmed completed workouts, with completion flags, timestamps,
 effort, notes and source. CSV is not a complete relational backup; names/notes are
 quoted and spreadsheet formula prefixes escaped. Weights use kg.
@@ -162,7 +172,7 @@ Unknown/ambiguous/nonexistent timestamps and invalid fields block the entire imp
 No RIR is inferred. RPE 10 is not failure unless set_type explicitly says failure.
 Missing load stays unrecorded; zero load is valid. Timed/distance sets are preserved.
 
-Store v2 schemaRevision=2 includes default-empty mapping rules/import batch summaries
+Store v2 schemaRevision=3 includes default-empty exercise preferences and retained mapping rules/import batch summaries
 and optional imported fields; older v2 and V1 data remain compatible. JSON and CSV
 exports retain import provenance and source set context. Export a JSON backup first.
 Source files belong only in ignored local-imports/; do not commit personal exports.
@@ -177,7 +187,7 @@ Remove-Item Env:VERIFY_LOCAL_HEVY
 
 Limits: 10 MB CSV files, one source timezone per file, no fuzzy auto-merge or source
 workout IDs, no automatic replacement of changed historical exports, no row-level
-skip, no JSON restore/batch undo/cloud sync. All mappings must resolve; source errors
+skip, no populated-store JSON merge/batch undo/cloud sync. All mappings must resolve; source errors
 must be corrected before reselecting. Identical timestamps/title/description group
 one source workout. Repeated set indices split exercise blocks with a warning;
 original source order and indices are retained. All completed set types contribute

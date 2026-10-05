@@ -1,3 +1,4 @@
+import { newId } from '../domain/id';
 import { z } from 'zod';
 import {
   builtInExercises,
@@ -20,9 +21,15 @@ export const gymStoreSchema = z
   .object({
     version: z.literal(2),
     schemaRevision: z
-      .union([z.literal(1), z.literal(2)])
-      .default(2)
-      .transform(() => 2 as const),
+      .union([z.literal(1), z.literal(2), z.literal(3)])
+      .default(3)
+      .transform(() => 3 as const),
+    exercisePreferences: z
+      .record(
+        z.string(),
+        z.object({ pinned: z.boolean(), dismissed: z.boolean() }),
+      )
+      .default({}),
     exercises: z.array(libraryExerciseSchema),
     routines: z.array(gymRoutineSchema),
     active: gymWorkoutSchema.nullable(),
@@ -86,12 +93,40 @@ export const gymStoreSchema = z
           code: 'custom',
           message: 'Mapping references unknown exercise',
         });
+    for (const id of Object.keys(s.exercisePreferences))
+      if (!s.exercises.some((e) => e.id === id))
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Preference references unknown exercise',
+        });
   });
 export type GymStore = z.infer<typeof gymStoreSchema>;
+export function setExercisePreference(
+  store: GymStore,
+  id: string,
+  patch: Partial<GymStore['exercisePreferences'][string]>,
+) {
+  if (!store.exercises.some((e) => e.id === id))
+    throw new Error('Exercise not found');
+  return gymStoreSchema.parse({
+    ...store,
+    exercisePreferences: {
+      ...store.exercisePreferences,
+      [id]: {
+        ...(store.exercisePreferences[id] ?? {
+          pinned: false,
+          dismissed: false,
+        }),
+        ...patch,
+      },
+    },
+  });
+}
 export function initialGymStore(): GymStore {
   return {
     version: 2,
-    schemaRevision: 2,
+    schemaRevision: 3,
+    exercisePreferences: {},
     exercises: structuredClone(builtInExercises),
     routines: [],
     active: null,
@@ -191,13 +226,13 @@ export function duplicateRoutine(store: GymStore, id: string): GymStore {
   const now = new Date().toISOString();
   return saveRoutine(store, {
     ...original,
-    id: crypto.randomUUID(),
+    id: newId(),
     name: `${original.name.slice(0, 110)} copy`,
     createdAt: now,
     updatedAt: now,
     exercises: original.exercises.map((e) => ({
       ...e,
-      id: crypto.randomUUID(),
+      id: newId(),
     })),
   });
 }
@@ -237,7 +272,7 @@ export function saveCustomExercise(
 }
 export function workoutExercise(exercise: Exercise, sets = 1) {
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     exerciseId: exercise.id,
     name: exercise.name,
     primaryMuscleGroup: exercise.primaryMuscleGroup,
@@ -259,7 +294,7 @@ export function startGymWorkout(
   return gymStoreSchema.parse({
     ...store,
     active: {
-      id: crypto.randomUUID(),
+      id: newId(),
       routineId: routine.id,
       routineName: routine.name,
       routineSnapshot: structuredClone(routine),

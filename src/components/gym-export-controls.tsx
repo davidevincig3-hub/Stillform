@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import { exportGymCsv, exportGymJson } from '@/repositories/gym-export';
 import { HevyImportControls } from './hevy-import-controls';
+import { GymBootstrap } from './gym-bootstrap';
 function download(text: string, name: string, type: string) {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const link = document.createElement('a');
@@ -58,8 +59,9 @@ export function GymExportControls() {
         </button>
       </div>
       <HevyImportControls />
+      <GymBootstrap />
       <p role="status" className="caption">
-        {message || 'JSON restore is not enabled in this version.'}
+        {message}
       </p>
     </details>
   );

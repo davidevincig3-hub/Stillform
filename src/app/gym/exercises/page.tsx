@@ -1,4 +1,5 @@
 'use client';
+import { newId } from '@/domain/id';
 import Link from 'next/link';
 import { useState } from 'react';
 import { PageHeading } from '@/components/assessment';
@@ -83,7 +84,7 @@ function ExerciseForm({
         const data = new FormData(e.currentTarget);
         try {
           const exercise: Exercise = {
-            id: initial?.id ?? crypto.randomUUID(),
+            id: initial?.id ?? newId(),
             name: String(data.get('name')),
             primaryMuscleGroup: String(data.get('muscle') ?? '').trim() || null,
             secondaryMuscleGroups: String(data.get('secondary') ?? '')

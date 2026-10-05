@@ -1,9 +1,12 @@
 'use client';
+import { newId } from '@/domain/id';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import { PageHeading } from './assessment';
+import { RecentExercises } from './recent-exercises';
+import { ExercisePicker } from './exercise-picker';
 import type { GymRoutine, RoutineExercise } from '@/domain/gym';
 import { reorderRoutine, saveRoutine } from '@/repositories/gym-storage';
 export function RoutineEditor({ id }: { id: string }) {
@@ -25,7 +28,7 @@ function RoutineForm({ initial }: { initial?: GymRoutine }) {
   const [draft, setDraft] = useState<GymRoutine>(
     () =>
       initial ?? {
-        id: crypto.randomUUID(),
+        id: newId(),
         name: '',
         notes: '',
         exercises: [],
@@ -35,6 +38,22 @@ function RoutineForm({ initial }: { initial?: GymRoutine }) {
   );
   const [exerciseId, setExerciseId] = useState(store.exercises[0]?.id ?? '');
   const [error, setError] = useState('');
+  function addExercise(id: string) {
+    if (!store.exercises.some((e) => e.id === id)) return;
+    setDraft({
+      ...draft,
+      exercises: [
+        ...draft.exercises,
+        {
+          id: newId(),
+          exerciseId: id,
+          defaultSets: 3,
+          repRange: null,
+          notes: '',
+        },
+      ],
+    });
+  }
   function edit(id: string, patch: Partial<RoutineExercise>) {
     setDraft({
       ...draft,
@@ -83,6 +102,7 @@ function RoutineForm({ initial }: { initial?: GymRoutine }) {
             onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
           />
         </section>
+        <RecentExercises compact onAdd={addExercise} />
         {draft.exercises.map((entry, index) => {
           const exercise = store.exercises.find(
             (e) => e.id === entry.exerciseId,
@@ -205,38 +225,18 @@ function RoutineForm({ initial }: { initial?: GymRoutine }) {
           );
         })}
         <section className="card">
-          <label htmlFor="routine-exercise">Exercise library</label>
+          <ExercisePicker
+            id="routine-exercise"
+            label="Exercise library"
+            value={exerciseId}
+            onChange={setExerciseId}
+          />
           <div className="row start">
-            <select
-              id="routine-exercise"
-              value={exerciseId}
-              onChange={(e) => setExerciseId(e.target.value)}
-            >
-              {store.exercises.map((e) => (
-                <option value={e.id} key={e.id}>
-                  {e.name} · {e.primaryMuscleGroup ?? 'Unassigned'}
-                  {e.custom ? ' · custom' : ''}
-                </option>
-              ))}
-            </select>
             <button
               type="button"
               className="secondary"
-              onClick={() =>
-                setDraft({
-                  ...draft,
-                  exercises: [
-                    ...draft.exercises,
-                    {
-                      id: crypto.randomUUID(),
-                      exerciseId,
-                      defaultSets: 3,
-                      repRange: null,
-                      notes: '',
-                    },
-                  ],
-                })
-              }
+              disabled={!exerciseId}
+              onClick={() => addExercise(exerciseId)}
             >
               Add to routine
             </button>

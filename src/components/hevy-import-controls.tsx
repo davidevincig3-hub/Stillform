@@ -1,4 +1,5 @@
 'use client';
+import { newId } from '@/domain/id';
 import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import {
@@ -33,7 +34,7 @@ export function HevyImportControls() {
     setApproved(false);
   }
   function custom(m: ExerciseMapping): ExerciseMapping {
-    const id = crypto.randomUUID();
+    const id = newId();
     return {
       ...m,
       exerciseId: id,
@@ -397,6 +398,7 @@ export function HevyImportControls() {
           <p>
             {plan.summary.workouts} workouts ready · {plan.summary.sets} sets ·{' '}
             {plan.summary.duplicates} skipped duplicates ·{' '}
+            {plan.summary.unchanged} unchanged workouts ·{' '}
             {plan.summary.customExercises} custom exercises ·{' '}
             {plan.summary.existingMappings} names mapped to existing exercises
           </p>
@@ -439,7 +441,7 @@ export function HevyImportControls() {
             {result.duplicates} duplicates skipped · {result.customExercises}{' '}
             custom exercises created · {result.existingMappings} names mapped to
             existing exercises · {result.skippedSets} duplicate set rows skipped
-            · 0 unresolved rows
+            · 0 unresolved rows · {result.unchanged} unchanged workouts
           </p>
           <p className="caption">
             {result.start} – {result.end}
