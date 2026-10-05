@@ -124,8 +124,9 @@ export function ActivityHistory({ running = false }: { running?: boolean }) {
       )}
       {!filtered.length && (
         <p className="muted">
-          No real activities available. Connect and sync Polar or Strava to
-          build your registry.
+          {data?.activities.length
+            ? 'No activities match the current sport/search filters. View All activities to inspect other sports.'
+            : 'No real activities available. Connect and sync Polar or Strava to build your registry.'}
         </p>
       )}
       {filtered.slice(page * size, page * size + size).map((a) => (

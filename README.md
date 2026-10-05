@@ -300,6 +300,19 @@ development credential files.
 
 ## Polar AccessLink Dynamic API v4 — setup and real verification
 
+Sport context uses Polar's actual top-level `/sports/list` array. A context refresh
+also resolves sport classifications of previously saved Polar sources from their raw
+session snapshots, preserving permanent IDs, raw revisions, selected field ownership,
+and completed training checkpoints. Training discovery already creates canonical
+activities/source records; rich detail hydration is optional and on demand. Running
+shows canonical `run` / `trail_run` activities; All Activities includes other sports.
+
+Diagnosis on 2026-10-05 found five imported Polar source/activity pairs classified as
+`other` because the old context parser discarded the array catalog. A read-only
+preview resolves four to running and one to swimming, with no identity reviews.
+The live repair was not executed: automatic approval review requires explicit approval
+before writing catalog/classification changes to this existing deployment.
+
 Provider failures retain a bounded, sanitized diagnostic (path, HTTP status,
 content type, error body, family and refresh outcome). Expand **Provider diagnostic**
 in context/sync status; the authenticated API error also contains it. Credentials

@@ -1,5 +1,21 @@
 # Decision log
 
+## 2026-10-05 — Polar sport-catalog shape and existing-record classification
+
+The real sports endpoint returns a top-level array. Parse/validate that shape rather
+than silently treating an unexpected envelope as an empty catalog. Discovery already
+persists full provider source snapshots and canonical activities. Rich hydration is
+optional; training has no queued hydration dates and must not require it for visibility.
+
+After context refresh, normalize saved non-deleted Polar source snapshots against the
+catalog and use the existing idempotent ingestion/field-ownership policy to update
+resolved types. Preserve IDs, source raw/fingerprint/revisions, match decisions and
+training jobs; unresolved IDs remain explicit and never become guessed running sessions.
+Read-only diagnosis found five existing Polar source/activity pairs, four running and
+one pool swim in the public catalog. The live update requires explicit approval after
+automatic approval review rejected the metadata/registry write under the user's state
+preservation instruction; no live repair was executed during this task.
+
 ## 2026-10-05 — Verified Polar training local datetime boundaries
 
 Live read-only probes established that training list accepts `YYYY-MM-DDT00:00:00`,

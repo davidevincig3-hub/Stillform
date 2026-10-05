@@ -18,7 +18,6 @@ import type { Connection } from './strava-client';
 import { polarCalendarDate } from '../domain/polar-training-range';
 import { PolarClient, PolarError, POLAR_PATHS } from './polar-client';
 import {
-  array,
   object,
   familyRows,
   rowDate,
@@ -26,6 +25,7 @@ import {
   normalizePolarTraining,
   trainingRows,
   normalizePolarFeatures,
+  parsePolarSports,
 } from './polar-normalize';
 export async function polarAuthorized<T>(
   owner: string,
@@ -229,9 +229,35 @@ export async function polarMetadata(
         const r = await polarAuthorized(owner, repo, client, (c) =>
           client.get(c, POLAR_PATHS.sports),
         );
-        state.sports = array(object(r).sports);
+        state.sports = parsePolarSports(r);
         await repo.savePolar(owner, snapshot.version, state);
         snapshot.version++;
+        // Resolve already-imported sources using their saved payloads. Do not
+        // restart discovery, fetch rich details, or replace permanent identity.
+        const registry = await repo.read(owner);
+        let changed = false;
+        const names = new Set(state.sports.map((s) => s.name));
+        for (const source of registry.state.sources) {
+          if (source.provider !== 'polar' || source.deleted) continue;
+          const normalized = normalizePolarTraining(
+            source.raw,
+            c.athleteId,
+            state.sports,
+          );
+          if (
+            normalized.source.key !== source.key ||
+            !names.has(normalized.source.providerType) ||
+            normalized.source.providerType === source.providerType
+          )
+            continue;
+          ingestActivity(
+            registry.state,
+            normalized.activity,
+            normalized.source,
+          );
+          changed = true;
+        }
+        if (changed) await repo.save(owner, registry.version, registry.state);
       }
       if (c.scopes.includes('devices:read')) {
         await new Promise((resolve) => setTimeout(resolve, 1100));

@@ -398,7 +398,9 @@ export function PolarConnection() {
                 Requested {j.from} – {j.to} (exclusive) · oldest/newest returned{' '}
                 {j.oldest ?? 'None'} / {j.newest ?? 'None'} · last success{' '}
                 {j.lastSuccess ?? 'Not yet'} · next {j.next} ·{' '}
-                {j.pending.length} dates awaiting detail
+                {family === 'training'
+                  ? 'Rich training details are fetched on demand from activity detail.'
+                  : `${j.pending.length} dates awaiting detail`}
               </p>
               <p className="caption">
                 Empty availability windows:{' '}

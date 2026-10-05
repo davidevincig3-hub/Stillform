@@ -17,6 +17,19 @@ export const number = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 const string = (value: unknown) => (typeof value === 'string' ? value : null);
 const date = (value: unknown) => z.iso.date().parse(value);
+// /sports/list returns a top-level array, not a { sports: [...] } envelope.
+export function parsePolarSports(raw: unknown): PolarStore['sports'] {
+  return z
+    .array(
+      z
+        .object({
+          id: z.object({ id: z.union([z.number().int(), z.string().min(1)]) }),
+          name: z.string().min(1),
+        })
+        .passthrough(),
+    )
+    .parse(raw);
+}
 export function durationSeconds(value: unknown) {
   if (typeof value !== 'string' || !/^\d+(\.\d+)?s$/.test(value)) return null;
   return number(Number(value.slice(0, -1)));
