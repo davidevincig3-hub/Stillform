@@ -7,7 +7,7 @@ export const recoveryFamilies = [
   'continuous',
   'ppi',
 ] as const;
-// Shared eligibility boundary for future Home/engine consumers. This is not an engine.
+// Authoritative eligibility boundary shared by source display and engine inputs.
 export function recoveryInputs(state: PolarStore) {
   return {
     sleep: state.sleep.filter(isRecoveryEligible),

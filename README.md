@@ -10,8 +10,19 @@ Recovery provider history has explicit **Exclude from recovery / Restore** contr
 User adjudications (including `sensor_artifact`) live separately from immutable Polar
 payloads and survive resync. Real Recovery shows eligible/valid and excluded counts;
 excluded records stay inspectable but never enter its charts, baselines or maturity
-counts. The shared recovery-input boundary is available for future Home/engine
-consumers; those engines and confidence decisions remain unimplemented.
+counts. Recovery Engine V1 and Home use the same shared eligibility boundary and
+statistical assessment. State is separate from evidence confidence; no score is generated.
+
+Recovery Engine V1 uses a previous 28-day personal median/MAD baseline, separated
+from a three-day recent trend. Distinct valid dates, temporal span and coverage
+control maturity. The 7/14/28-day and deviation/convergence rules are **product
+heuristics, not scientific physiological thresholds**. A single family cannot
+determine an integrated recovery state. Insufficient data is a complete, valid output.
+Home and Recovery share the server input and pure engine through one client hook;
+confirmed local Gym comparisons require identical first-set exercise/equipment,
+reps and recorded effort and remain local (no upload). Logged duration, set count
+and exposure are descriptive, not a unified load score. PPI HRV, missing night HR,
+running drift, context/AI interpretation and automatic plan changes remain unavailable.
 
 Polar activity detail separates manual/automatic laps and displays persisted interval
 sample availability. Existing detail is corrected on read without rehydration or raw
@@ -67,7 +78,7 @@ They are not synced or automatically backed up. Export JSON regularly; clearing
 site storage removes local data. Concurrent edits in multiple tabs are unsupported;
 use one active tab. Coach messages are memory-only.
 Gym routines, workouts, previous performances and descriptive analytics are real
-local data. Home/Plan and analytical Running cards remain labeled demos; Recovery has a separate real Polar mode and Running history uses real canonical records. Templates contain only
+local data. Home recovery and Recovery use the real engine when configured; Plan and analytical Running cards remain labeled demos. Running history uses real canonical records. Templates contain only
 routine structure, never sample performances.
 
 Gym storage uses `adaptive-coach.gym.v2` (version 2). V1 data is read from
@@ -462,25 +473,25 @@ Raw structures retain unsupported/edited timing details. Device sensor quality i
 a watch name alone does not prove which HR sensor was used.
 
 Recovery shows actual nightly values and sleep timing/quality, gaps, counts and descriptive
-means. UI-only maturity defaults: 7 preliminary / 14 developing / 28 established **complete
+medians. Product maturity defaults: 7 preliminary / 14 developing / 28 established **complete
 observations**, configurable in `analytics/polar-recovery.ts` and not scientifically validated.
-Incomplete observations are shown but excluded from reference means/maturity. Maturity is
-per metric and chosen window, not a personalized Recovery verdict. Analyze exposes selected
+Incomplete observations are shown but excluded from reference medians/maturity. Temporal
+span and coverage also gate maturity. Analyze exposes selected
 real dates/units/coverage/source; there is no real AI analysis. Vendor scores are secondary.
 Running detail preserves samples and context server-side and displays availability, laps,
 zones/pauses/routes/statistics, vendor Running Index/load and direct elapsed pace. Ambiguous
 speed-sample units stay provider-unspecified, with no invented speed conversion.
 
-Still pending: personalized Recovery score/Decision Engine, adaptive recommendations, drift,
+Still pending: scientific evaluation of Recovery Engine heuristics, automated training decisions, adaptive recommendations, drift,
 efficiency/threshold/VO2 analytics, real Coach/Consensus/Calendar, cloud Gym migration,
 continuous/PPI exploratory charts, notification/background worker, authenticated export and
 deletion for server physiological records, multi-owner client-rate allocation and indexed
-large-history storage. Home/Plan/Coach and Running analytical cards remain labelled samples.
+large-history storage. Plan/Coach and Running analytical cards remain labelled samples; Home recovery uses the shared real engine.
 Sparse Polar history is not complete running history. Device/sport context requires an
 explicit sync; unknown sport IDs remain `other` until re-synced with catalog context.
 Optional features/permissions/device measurements and historical availability vary. A window
 without returned records is not a measured anomaly or proof of an API retention policy.
 
-Recommended next milestone: configure Supabase and one real Polar client, verify SQL owner
-isolation and OAuth/refresh, sync a small range, review matches, then collect real overnight
-observations and inspect source quality before designing any personalized Recovery engine.
+Recommended next milestone: collect valid overnight observations prospectively, monitor
+baseline coverage and evaluate/calibrate the clearly labelled statistical heuristics before
+letting recovery evidence influence user-approved training proposals.

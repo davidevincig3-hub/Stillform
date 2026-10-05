@@ -76,7 +76,7 @@ it('atomically excludes two user-adjudicated artifacts without changing raw payl
       completeCount: 0,
       coverage: 0,
       maturity: 'insufficient',
-      referenceMean: null,
+      referenceMedian: null,
     });
   }
   // Defense in depth when a caller supplies unfiltered provider observations.
@@ -111,8 +111,8 @@ it('excluded points cannot enter window means, coverage or maturity even when pa
   expect(result).toMatchObject({
     count: 1,
     completeCount: 1,
-    referenceMean: 8,
-    maturity: 'preliminary',
+    referenceMedian: 8,
+    maturity: 'insufficient',
     coverage: 1 / 7,
   });
 });

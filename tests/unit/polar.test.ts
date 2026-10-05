@@ -538,7 +538,7 @@ describe('rich training and recovery normalization', () => {
       count: 2,
       completeCount: 1,
       maturity: 'insufficient',
-      referenceMean: null,
+      referenceMedian: null,
     });
     expect(s.points.filter((p) => p.value === null)).toHaveLength(5);
     expect(baselineMaturity(9)).toBe('preliminary');

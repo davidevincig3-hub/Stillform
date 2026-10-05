@@ -6,7 +6,21 @@ filtered query boundary (`recovery-inputs.ts`) for Sleep/Nightly/continuous/PPI.
 UI history orchestrates requests; it does not persist or calculate eligibility locally.
 Analytics defend against excluded inputs even when handed unfiltered observations.
 Overrides survive normalizer upserts without mutating provider raw snapshots. Future
-Home/Recovery Engine inputs must come through this boundary; no engine exists yet.
+Home/Recovery Engine inputs come through this boundary.
+
+Recovery Engine V1: `domain/recovery-engine.ts` defines versioned, AI-readable outputs;
+`analytics/recovery-baseline.ts` handles actual-day personal median/MAD and temporal
+maturity; `analytics/recovery-engine.ts` is a pure deterministic comparison/convergence
+function. `server/recovery-engine-input.ts` adapts eligible Polar measurements and
+confirmed canonical activities without provider requests or writes. `/api/polar/recovery`
+returns its assessment and compact scalar input (no raw provider payloads).
+
+Home and Recovery share `use-recovery-data.ts` and `RecoveryAssessment`. The hook uses
+the same pure function to add confirmed local Gym inputs with `recovery-gym.ts`; sets
+never leave the browser. Matching gymWorkoutId identities avoid double counting registry
+shells. Backend/auth failures do not silently substitute sample recovery. Missing sleep,
+HRV, context and performance remain explicit; timing/native intervals and training dose
+are descriptive. Family convergence is a product heuristic, not physiological validation.
 
 ## Polar v4 extension (current)
 
@@ -38,7 +52,7 @@ Registry and recovery CAS writes are separate, not a cross-table transaction. Ex
 identities and deterministic upserts make retry after intermediate persistence safe. Raw
 revisions survive edits. Large arrays live in rich-data storage; activity detail gives sample
 availability/laps and available zone/pause/route/statistics data. Ordinary list responses omit
-raw/revisions. `analytics/polar-recovery.ts` implements descriptive windows/counts/means/UI
+raw/revisions. `analytics/polar-recovery.ts` implements descriptive windows/counts/medians/UI
 maturity only; `real-recovery.tsx` renders real and separate sample modes without fallback.
 
 Owner-bound Polar account identity is an explicit limitation: current minimal scopes/token

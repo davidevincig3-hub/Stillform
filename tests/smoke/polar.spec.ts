@@ -197,7 +197,7 @@ for (const width of [390, 430])
       .getByRole('button', { name: 'Analyze Nightly RMSSD', exact: true })
       .click();
     await expect(
-      page.getByText(/No AI or recovery decision computed/),
+      page.getByText(/No AI or training prescription/),
     ).toBeVisible();
     await page
       .getByRole('button', { name: '90d', exact: true })

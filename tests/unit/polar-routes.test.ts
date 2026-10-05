@@ -71,6 +71,7 @@ it('quality updates use owner/origin checks, retain raw history and expose filte
   ).json();
   expect(recovery).toMatchObject({
     sleep: [],
+    engine: { state: 'insufficient_data', baselineMaturity: 'insufficient' },
     recordCounts: { sleep: { provider: 1, valid: 0, excluded: 1 } },
     history: [
       { validityOverride: { status: 'excluded', reason: 'sensor_artifact' } },

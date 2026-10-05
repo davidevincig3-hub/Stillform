@@ -1,17 +1,24 @@
 # Roadmap
 
-## Current status — Polar v4 source milestone implemented
+## Current status — Recovery Engine V1 implemented
+
+Recovery Engine V1 is now implemented: personal robust baselines, actual-day coverage,
+separate confidence, tentative independent-family patterns, honest insufficient data,
+user exclusions and one shared Home/Recovery output. Heuristics need prospective
+evaluation with valid overnight measurements before driving training proposals. Current
+live data has no eligible overnight baseline; no physiological judgment is justified.
 
 Secure owner-bound Polar OAuth/rotating refresh, independent dormant Strava configuration,
 encrypted shared repositories, endpoint-specific resumable backfill, explicit training
 enrichment, canonical linking, sleep/Nightly/continuous-HR/PPI/device/catalog normalization
 and real Recovery source display are implemented with synthetic tests. Supabase's current
-secret key is primary; SQL 0005 and live credentials/authorization remain unapplied/unverified.
-Sparse history and zero-night success are first-class states. No personalized engine yet.
+secret key is primary. The current owner's Polar authorization, refresh, database
+persistence and bounded source ingestion have been verified live. Sparse history
+and zero-night success remain first-class states.
 
 The earlier Strava setup recommendation is superseded: the user cannot currently register
-a Strava app, so leave it dormant. Next configure Supabase plus Polar, verify owner isolation,
-lease/CAS behavior and real OAuth refresh, sync a small bounded range and review matches.
+a Strava app, so leave it dormant. Multi-owner deployment still needs operational
+verification of owner isolation, lease/CAS behavior and distributed provider budgets.
 Collect nights prospectively and validate source timing/quality before custom physiology.
 Do not require a historic sleep baseline to start collection.
 
@@ -19,7 +26,7 @@ Follow-ups: authenticated physiological export/deletion, normalized/indexed larg
 storage, client-wide distributed budget and operational retry worker before multi-user hosting,
 continuous/PPI exploratory charts, explicit account-switch support if a stable identity contract
 becomes available, Gym cloud/reconciliation with user-approved migration and JSON restore.
-After real observation quality is understood, design/evaluate personalized Recovery and
+After real observation quality is understood, evaluate the Recovery V1 heuristics and
 comparable-running analytics separately, then Plan decisions and grounded Coach/Consensus.
 
 ## Phase 1 — Foundation + gym logger + mock dashboard

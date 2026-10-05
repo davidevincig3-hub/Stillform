@@ -1,5 +1,32 @@
 # Decision log
 
+## 2026-10-05 — Recovery Engine V1, conservative personal statistical patterns
+
+Use a pure versioned engine and one Home/Recovery input/render path. Never persist a
+proprietary score or infer missing overnight values. Prior 28-day median/MAD baseline
+ends before the current three-day trend. Require 14 valid distinct baseline dates and
+adequate temporal span/coverage, two recent observations and freshness for a state vote.
+One isolated unusual measurement is visible but cannot decide recovery; conflicting
+families also remain insufficient. Two agreeing independent families including overnight
+evidence can describe a tentative pattern; correlated autonomic metrics count once.
+Elevated HRV does not prove improved recovery. Sensor unknowns cap evidence confidence.
+
+Count/span/coverage maturity, MAD scaling/deviation floor and convergence rules are
+explicitly product heuristics, not validated physiological thresholds. Research supports
+personal longitudinal context and highlights measurement/protocol heterogeneity; it does
+not validate our rules: [HRV methodological review](https://pmc.ncbi.nlm.nih.gov/articles/PMC8507742/)
+and [monitoring framework](https://pmc.ncbi.nlm.nih.gov/articles/PMC5990631/).
+
+Sleep duration/continuity and vendor RMSSD are eligible primary observations. Native RRI
+and respiratory intervals are secondary; no inversion to mean night HR/rate. Bedtime is
+local clock minutes from noon to preserve midnight continuity; seven-day timing MAD is
+descriptive, not a sleep score. Continuous HR/PPI context does not establish nightly HRV.
+Canonical running/gym exposure is logged history, not proof of rest or intensity. Local
+Gym comparisons use identical first-set exercise/equipment/reps/effort, remain limited
+by unrecorded technique/rest, and never upload sets. Missing effort means no comparison.
+No running drift, AI or automated training change. Current excluded sleep records remain
+excluded; all provider state and credentials are read-only for engine calculation.
+
 ## 2026-10-05 — Generic observation validity and user authority
 
 All Polar Sleep, Nightly Recharge, continuous-HR and PPI observations support the
@@ -16,12 +43,13 @@ identities, validates all requested records before saving and uses the repositor
 owner lock and version CAS. It supports disconnected retained history and never needs
 a provider request or token refresh. Restore records an explicit valid decision.
 
-`recoveryInputs` is the shared eligibility boundary for future Home/Recovery Engine
+`recoveryInputs` is the shared eligibility boundary for Home/Recovery Engine
 consumers. API recovery sleep/nightly arrays are filtered; separate safe provider
 history and provider/valid/excluded counts retain transparency. Series/window queries
-also reject excluded inputs defensively, including descriptive means, coverage and
+also reject excluded inputs defensively, including descriptive medians, coverage and
 maturity. UI valid counts describe eligibility; metric completeness still controls
-baseline counts. Recovery Engine and confidence calculations remain unimplemented.
+baseline counts. Recovery Engine and confidence calculation now consume this boundary
+as described in the subsequent V1 decision above.
 
 ## 2026-10-05 — Polar detail presentation without source mutation
 

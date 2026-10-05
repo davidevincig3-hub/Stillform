@@ -2,14 +2,30 @@
 
 ## Current milestone — Polar v4 real source data
 
+Recovery Engine V1 supersedes earlier statements that no engine exists. Home recovery
+and Recovery share a deterministic real assessment: insufficient_data, normal (usual
+personal range), possibly_suppressed or possibly_elevated statistical pattern, with
+separate confidence, maturity, family contributions, influential signals, anomalies
+and missing-data explanation. No recovery score, AI, diagnosis or training prescription.
+7/28/90-day source views retain real gaps and use descriptive medians.
+
+Personal prior baselines and recent trends remain separate. Explicit exclusions and
+incomplete observations never enter engine baselines or maturity. Independent-family
+convergence is required for an integrated pattern; one anomalous observation/trend
+remains a lower-confidence anomaly. Absence of context never counts negatively. Sleep
+timing/regularity and training duration/exposure are descriptive, not physiological scores.
+Local Gym comparisons require matching exercise/equipment, first-set reps and recorded
+effort; no e1RM or comparison of missing effort. Running drift and PPI HRV remain unavailable.
+All maturity/deviation/convergence cutoffs are product heuristics requiring evaluation.
+
 Provider existence is distinct from recovery eligibility. Recovery history supports
 explicit Exclude from recovery and Restore actions with optional artifact/detection
 reasons. User adjudication is authoritative and survives resync; raw provider records
 and provenance are retained. Excluded observations do not enter recovery trends,
 averages, descriptive baselines, coverage or baseline maturity. Valid counts describe
 eligible observations; completeness and available values are checked independently.
-Future real Home, confidence and Recovery Engine consumers must use the shared filtered
-recovery-input query. They are not implemented in this milestone. Automatic quality
+Real Home, confidence and Recovery Engine consumers use the shared filtered
+recovery-input query. Automatic quality
 checks may eventually request review but cannot silently invalidate user observations.
 
 This section supersedes earlier statements that Polar is a stub. Strava remains dormant,

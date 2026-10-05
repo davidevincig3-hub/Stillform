@@ -31,6 +31,8 @@ import {
 } from '@/server/polar-service';
 import { polarScopes, familyScope } from '@/domain/polar';
 import { setPolarValidity, publicRecovery } from '@/server/recovery-quality';
+import { polarRecoveryEngineInput } from '@/server/recovery-engine-input';
+import { assessRecovery } from '@/analytics/recovery-engine';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const response = (body: unknown, status = 200) =>
@@ -95,7 +97,19 @@ export async function GET(
     if (action === 'recovery') {
       const p = await repo.readPolar(owner),
         connected = !!(await repo.account(owner, 'polar'));
-      return response(publicRecovery(p.state, connected));
+      const asOf = new Date().toISOString(),
+        registry = await repo.read(owner);
+      const engineInput = polarRecoveryEngineInput(
+        p.state,
+        registry.state,
+        asOf,
+        c.polarTimeZone!,
+      );
+      return response({
+        ...publicRecovery(p.state, connected, asOf),
+        engine: assessRecovery(engineInput),
+        engineInput,
+      });
     }
     if (action === 'connect') {
       if (new URL(request.url).searchParams.get('account') !== 'confirmed')

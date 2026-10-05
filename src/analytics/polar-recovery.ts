@@ -4,11 +4,17 @@ import {
   type ValidityOverride,
 } from '../domain/observation-quality';
 import type { recoveryFamilies } from '../domain/recovery-inputs';
+import type {
+  RecoveryEngineResult,
+  RecoveryEngineInput,
+} from '../domain/recovery-engine';
+import { median, temporalMaturity } from './recovery-baseline';
 export const maturityPolicy = {
   preliminary: 7,
   developing: 14,
   established: 28,
 };
+// Legacy count-only helper; engine/chart baselines use temporalMaturity instead.
 export function baselineMaturity(count: number, policy = maturityPolicy) {
   return count >= policy.established
     ? 'established'
@@ -28,6 +34,8 @@ export interface RecoveryPoint {
 export type PublicSleep = Omit<PolarSleep, 'raw' | 'previous'>;
 export type PublicNightly = Omit<PolarNightly, 'raw' | 'previous'>;
 export interface RecoveryData {
+  engine?: RecoveryEngineResult;
+  engineInput?: RecoveryEngineInput;
   recordCounts?: Record<
     (typeof recoveryFamilies)[number],
     { provider: number; valid: number; excluded: number }
@@ -164,10 +172,21 @@ export function windowSummary(
     count,
     completeCount: complete.length,
     coverage: count / days,
-    maturity: baselineMaturity(complete.length, policy),
-    referenceMean:
+    maturity: temporalMaturity(
+      complete.length,
+      complete.length
+        ? Math.round(
+            (Date.parse(complete.at(-1)!.date + 'T00:00:00Z') -
+              Date.parse(complete[0].date + 'T00:00:00Z')) /
+              86400000,
+          ) + 1
+        : 0,
+      complete.length / days,
+      policy,
+    ),
+    referenceMedian:
       complete.length >= policy.preliminary
-        ? complete.reduce((sum, p) => sum + p.value!, 0) / complete.length
+        ? median(complete.map((p) => p.value!))
         : null,
     start,
     end,

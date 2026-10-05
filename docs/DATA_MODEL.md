@@ -1,5 +1,26 @@
 # Data model
 
+## Recovery Engine V1 (computed, not persisted)
+
+`RecoveryEngineInput` holds a configured calendar/as-of date, separate metric protocols,
+validity/completeness/provenance per observation and confirmed descriptive activity exposure.
+Sleep/Autonomic protocols separate devices; missing effort cannot create Gym performance
+comparisons. `RecoveryEngineResult` version 1 separates state from confidence and records
+baseline maturity, five family statuses, source context/quality, signals/recent dates,
+robust baseline dates/count/span/coverage/median/MAD, deviations, anomalies, limitations,
+and deterministic explanation code/families/signal IDs. No numerical recovery score.
+
+The previous 28 calendar days end before the current three-day window. Only complete,
+eligible, finite actual observations count. Same-day repeats collapse to a median and
+do not inflate night count. Missing dates are preserved as gaps. Maturity gates use
+counts 7/14/28, span 7/14/28 and coverage 25/50/70% as explicit product heuristics.
+Anomaly threshold is max(2.5 × 1.4826 × MAD, 10% of personal median), also unvalidated
+product policy. Zero comparison scales are insufficient, not divided into fabricated scores.
+Integrated changed states require two agreeing families, at least one overnight family,
+and fresh trends with two actual observations in three days and developed baselines.
+Native RRI/respiration intervals, timing/regularity and activity exposure cannot vote
+as invented HR/rate/readiness. Current engine output does not mutate storage or raw records.
+
 Polar training range boundaries are UI calendar dates, serialized by
 `src/domain/polar-training-range.ts` to provider-accepted ISO local datetimes at
 midnight. Start is inclusive and end exclusive; checkpoints remain date-only.

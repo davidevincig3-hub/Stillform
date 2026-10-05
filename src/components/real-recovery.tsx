@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ResponsiveContainer,
@@ -20,6 +20,8 @@ import {
 import { PageHeading } from './assessment';
 import { RecoveryHistory } from './recovery-history';
 import { isRecoveryEligible } from '@/domain/observation-quality';
+import { RecoveryAssessment } from './recovery-assessment';
+import { useRecoveryData } from './use-recovery-data';
 function RealMetric({
   name,
   unit,
@@ -86,11 +88,11 @@ function RealMetric({
                 dot={{ r: 3 }}
                 connectNulls={false}
               />
-              {s.referenceMean !== null && (
+              {s.referenceMedian !== null && (
                 <ReferenceLine
-                  y={s.referenceMean}
+                  y={s.referenceMedian}
                   strokeDasharray="4 4"
-                  label="Observed mean"
+                  label="Observed median"
                 />
               )}
             </LineChart>
@@ -98,9 +100,9 @@ function RealMetric({
         </div>
       )}
       <p className="caption">
-        {s.referenceMean === null
+        {s.referenceMedian === null
           ? 'Insufficient complete observations for a descriptive baseline.'
-          : 'Dashed line: mean of complete observations in this window; not a physiological threshold.'}
+          : 'Dashed line: median of complete observations in this window; not a physiological threshold. Engine baseline excludes the current trend window.'}
       </p>
       {analyze && (
         <div className="notice">
@@ -121,7 +123,7 @@ function RealMetric({
             Source: Polar · UI maturity defaults {maturityPolicy.preliminary}/
             {maturityPolicy.developing}/{maturityPolicy.established} complete
             observations. These defaults are configurable and not scientifically
-            validated. No AI or recovery decision computed.
+            validated. No AI or training prescription.
           </p>
         </div>
       )}
@@ -144,8 +146,9 @@ export function RealRecovery({
     <>
       <PageHeading
         title="Recovery source data."
-        subtitle="Real Polar observations. Personalized Recovery interpretation is not yet computed."
+        subtitle="Real Polar observations and deterministic personal-baseline evidence."
       />
+      <RecoveryAssessment engine={data.engine} />
       <section className="card">
         <h2>{validSleep.length} valid sleep nights</h2>
         {data.recordCounts && (
@@ -239,42 +242,8 @@ export function RealRecovery({
   );
 }
 export function RecoveryMode({ sample }: { sample: React.ReactNode }) {
-  const [data, setData] = useState<RecoveryData | null>(null),
-    [message, setMessage] = useState(''),
-    [checking, setChecking] = useState(true),
-    [sampleView, setSampleView] = useState(false);
-  async function refresh() {
-    const response = await fetch('/api/polar/recovery', { cache: 'no-store' });
-    if (!response.ok)
-      throw new Error(
-        'Validity saved; Recovery reload failed. Reload this page.',
-      );
-    setData(await response.json());
-  }
-  useEffect(() => {
-    let alive = true;
-    fetch('/api/polar/recovery', { cache: 'no-store' })
-      .then(async (r) => {
-        if (r.ok) {
-          const d = await r.json();
-          if (alive) setData(d);
-        } else if (r.status !== 401 && r.status !== 503) {
-          if (alive)
-            setMessage(
-              'Real Recovery data unavailable; reconnect or check integration setup.',
-            );
-        }
-      })
-      .catch(() => {
-        if (alive) setMessage('Real Recovery data unavailable.');
-      })
-      .finally(() => {
-        if (alive) setChecking(false);
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data, mode, checking, error, refresh } = useRecoveryData();
+  const [sampleView, setSampleView] = useState(false);
   if (checking)
     return (
       <PageHeading
@@ -303,14 +272,18 @@ export function RecoveryMode({ sample }: { sample: React.ReactNode }) {
             <RealRecovery data={data} onRefresh={refresh} />
           )}
         </>
+      ) : mode === 'unavailable' ? (
+        <section className="card">
+          <h2>Recovery assessment unavailable</h2>
+          <p role="status">{error}</p>
+        </section>
       ) : (
         <>
-          {message && <p role="status">{message}</p>}
           {sample}
           <p className="notice">
             This is the sample view.{' '}
             <Link href="/integrations">Connect Polar</Link> for separate real
-            Recovery source data. No personal recovery engine is computed.
+            Recovery source data and a separate personal-baseline assessment.
           </p>
         </>
       )}
