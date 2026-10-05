@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { integrationConfig } from '@/server/integration-config';
 import { requireOwner, AuthError } from '@/server/integration-auth';
 import { integrationRepository } from '@/server/integration-repository';
+import {
+  presentActivity,
+  presentRichActivity,
+} from '@/server/activity-presentation';
 export const dynamic = 'force-dynamic';
 export async function GET(
   _request: Request,
@@ -31,39 +35,13 @@ export async function GET(
       );
     return NextResponse.json(
       {
-        activity: a,
+        activity: presentActivity(a, sources),
         sources: sources.map(({ raw, previous, ...safe }) => {
           void raw;
           void previous;
           return safe;
         }),
-        rich: rich.filter(Boolean).map((r) => ({
-          sourceKey: r!.sourceKey,
-          fetchedAt: r!.fetchedAt,
-          streamStatus: r!.streams.map((s) => ({
-            kind: s.kind,
-            samples: s.data.length,
-            seriesType: s.seriesType,
-          })),
-          laps: r!.laps.map(({ raw, ...lap }) => {
-            void raw;
-            return lap;
-          }),
-          warnings: r!.warnings,
-          polar: r!.polar
-            ? {
-                sensorQuality: r!.polar.sensorQuality,
-                exercises: r!.polar.exercises.map((e) => ({
-                  ...e,
-                  samples: e.samples.map(({ values, ...s }) => ({
-                    ...s,
-                    count: values.length,
-                  })),
-                  routes: Object.keys(e.routes).length ? e.routes : {},
-                })),
-              }
-            : undefined,
-        })),
+        rich: rich.filter((r) => r !== null).map(presentRichActivity),
       },
       { headers: { 'Cache-Control': 'no-store' } },
     );

@@ -7,6 +7,7 @@ import type {
 } from '../domain/activity';
 import type { PolarStore, PolarFamily, PolarFeatures } from '../domain/polar';
 import { fingerprint } from './integration-security';
+import { polarFallbackTitle } from '../domain/activity-presentation';
 export const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -84,7 +85,9 @@ export function normalizePolarTraining(
       sports,
     ),
     values = {
-      title: string(r.name) || providerType,
+      title:
+        string(r.name)?.trim() ||
+        polarFallbackTitle(sport(providerType), String(r.startTime)),
       sport: sport(providerType),
       startedAt: polarTimestamp(r.startTime, r.timezoneOffsetMinutes),
       localStart: string(r.startTime),
@@ -302,12 +305,15 @@ export function normalizePolarFeatures(
   const laps: ActivityLap[] = [];
   const exercises = array(raw.exercises).map((e) => {
     const lapGroup = object(e.laps);
-    for (const [kind, list] of Object.entries(lapGroup)) {
+    for (const kind of ['laps', 'autoLaps'] as const) {
+      const list = lapGroup[kind];
       for (const l of array(list)) {
         const stats = array(object(l.statistics).statistics).find(
           (s) => s.type === 'STATISTICS_TYPE_HEART_RATE',
         );
         laps.push({
+          kind: kind === 'laps' ? 'manual' : 'automatic',
+          exerciseId: string(object(e.identifier).id),
           index: laps.length,
           startedAt: null,
           elapsedSeconds:
@@ -332,11 +338,7 @@ export function normalizePolarFeatures(
         type: string(s.type) ?? 'UNSPECIFIED',
         unit: s.type === 'HEART_RATE' ? 'bpm' : 'provider_unspecified',
         intervalMillis: number(s.intervalMillis),
-        values: Array.isArray(s.values)
-          ? s.values.filter(
-              (v): v is number => typeof v === 'number' && Number.isFinite(v),
-            )
-          : [],
+        values: Array.isArray(s.values) ? s.values.map((v) => number(v)) : [],
       })),
       zones: array(e.zones),
       pauses: array(e.pauseTimes),

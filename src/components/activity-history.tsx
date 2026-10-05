@@ -7,6 +7,11 @@ import type {
   ActivityRegistry,
   ActivityLap,
 } from '@/domain/activity';
+import {
+  formatActivityDuration,
+  formatActivityPace,
+  groupActivityLaps,
+} from '@/domain/activity-presentation';
 interface PublicRegistry {
   activities: CanonicalActivity[];
   sources: Omit<ExternalActivitySource, 'raw' | 'previous'>[];
@@ -138,9 +143,7 @@ export function ActivityHistory({ running = false }: { running?: boolean }) {
             <strong>{a.title}</strong>
             <p className="caption">
               {new Date(a.startedAt).toLocaleString()} · {a.sport} ·{' '}
-              {a.elapsedSeconds === null
-                ? 'Duration unavailable'
-                : `${Math.round(a.elapsedSeconds / 60)} min`}
+              {formatActivityDuration(a.elapsedSeconds)}
               {a.distanceM === null
                 ? ''
                 : ` · ${(a.distanceM / 1000).toFixed(2)} km`}
@@ -186,7 +189,7 @@ export function ActivityHistory({ running = false }: { running?: boolean }) {
               <p>
                 {incoming?.sport} ·{' '}
                 {incoming && new Date(incoming.startedAt).toLocaleString()} ·{' '}
-                {incoming?.elapsedSeconds ?? 'Unknown'} s ·{' '}
+                {formatActivityDuration(incoming?.elapsedSeconds ?? null)} ·{' '}
                 {incoming?.distanceM ?? 'Unknown'} m · {r.sourceKey}
               </p>
               {r.candidates.map((c) => {
@@ -195,7 +198,7 @@ export function ActivityHistory({ running = false }: { running?: boolean }) {
                   <div key={c.activityId}>
                     <p>
                       Candidate: {a?.title} · {a?.sport} · {a?.startedAt} ·{' '}
-                      {a?.elapsedSeconds ?? 'Unknown'} s ·{' '}
+                      {formatActivityDuration(a?.elapsedSeconds ?? null)} ·{' '}
                       {a?.distanceM ?? 'Unknown'} m
                     </p>
                     <p className="caption">
@@ -317,28 +320,36 @@ export function ActivityDetail({ id }: { id: string }) {
                 ],
                 [
                   'Elapsed / moving',
-                  `${a.elapsedSeconds ?? '—'} / ${a.movingSeconds ?? '—'} s`,
+                  `${formatActivityDuration(a.elapsedSeconds)} / ${formatActivityDuration(a.movingSeconds)}`,
                 ],
                 [
                   'HR average / max',
                   `${a.averageHr ?? '—'} / ${a.maxHr ?? '—'} bpm`,
                 ],
                 [
-                  'Speed',
+                  'Provider average speed',
                   a.averageSpeed === null
-                    ? 'Unavailable'
+                    ? data.rich.some((r) =>
+                        r.polar?.exercises.some((e) =>
+                          e.samples.some(
+                            (s) => s.type === 'SPEED' && s.count > 0,
+                          ),
+                        ),
+                      )
+                      ? 'Samples available; unit unverified'
+                      : 'Unavailable'
                     : `${a.averageSpeed.toFixed(2)} m/s`,
                 ],
                 [
                   'Elevation gain',
-                  a.elevationM === null ? 'Unavailable' : `${a.elevationM} m`,
+                  a.elevationM === null
+                    ? 'Unavailable'
+                    : `${Math.round(a.elevationM)} m`,
                 ],
                 ['Device', a.device ?? 'Unavailable'],
                 [
                   'Elapsed pace',
-                  a.distanceM && a.elapsedSeconds
-                    ? `${(a.elapsedSeconds / (a.distanceM / 1000) / 60).toFixed(2)} min/km (includes pauses)`
-                    : 'Unavailable',
+                  `${formatActivityPace(a.elapsedSeconds, a.distanceM)} (includes pauses)`,
                 ],
               ].map(([label, value]) => (
                 <div key={label}>
@@ -408,16 +419,23 @@ export function ActivityDetail({ id }: { id: string }) {
               ) : (
                 <p>No available streams.</p>
               )}
-              <details>
-                <summary>Laps ({r.laps.length})</summary>
-                {r.laps.map((l) => (
-                  <p className="caption" key={l.index}>
-                    Lap {l.index + 1}: {l.distanceM ?? '—'} m ·{' '}
-                    {l.elapsedSeconds ?? '—'} s · {l.averageSpeed ?? '—'} m/s ·
-                    HR {l.averageHr ?? '—'} / {l.maxHr ?? '—'}
-                  </p>
-                ))}
-              </details>
+              {groupActivityLaps(r.laps).map((group) => (
+                <details key={group.label}>
+                  <summary>
+                    {group.label} ({group.laps.length})
+                  </summary>
+                  {group.laps.map((l, i) => (
+                    <p className="caption" key={l.index}>
+                      Lap {i + 1}
+                      {l.exerciseId ? ` · exercise ${l.exerciseId}` : ''}:{' '}
+                      {l.distanceM === null ? '—' : Math.round(l.distanceM)} m ·{' '}
+                      {formatActivityDuration(l.elapsedSeconds)} ·{' '}
+                      {formatActivityPace(l.elapsedSeconds, l.distanceM)}{' '}
+                      elapsed pace · HR {l.averageHr ?? '—'} / {l.maxHr ?? '—'}
+                    </p>
+                  ))}
+                </details>
+              ))}
               {r.warnings.map((w, i) => (
                 <p className="caption" key={i}>
                   {w}
@@ -425,7 +443,12 @@ export function ActivityDetail({ id }: { id: string }) {
               ))}
               {r.polar?.exercises.map((e, i) => (
                 <div key={e.id ?? i}>
-                  <h3>Polar exercise {i + 1} · sensor quality unknown</h3>
+                  <h3>
+                    {a.sport === 'run' || a.sport === 'trail_run'
+                      ? 'Running'
+                      : 'Polar'}{' '}
+                    segment {i + 1} · sensor quality unknown
+                  </h3>
                   <p className="caption">
                     Secondary vendor Running Index:{' '}
                     {e.runningIndex ?? 'Unavailable'}

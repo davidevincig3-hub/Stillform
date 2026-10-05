@@ -5,6 +5,122 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 const store = syntheticGymHistory();
 
+test('hydrated Polar detail shows separate lap families and readable series on mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const now = '2026-10-01T08:00:00Z';
+  const activity = canonicalActivitySchema.parse({
+    id: 'synthetic-polar-detail',
+    sport: 'run',
+    title: 'Running · 2026-10-01',
+    startedAt: now,
+    localStart: '2026-10-01T10:00:00',
+    timeZone: 'UTC offset 120 min',
+    elapsedSeconds: 2100,
+    movingSeconds: null,
+    distanceM: 5000,
+    elevationM: 26.7,
+    averageHr: 155,
+    maxHr: 185,
+    averageSpeed: null,
+    device: null,
+    status: 'confirmed',
+    quality: { available: [], missing: [], confidence: 'recorded' },
+    fieldSources: {},
+    sourceKeys: ['polar:synthetic'],
+    gymWorkoutId: null,
+    plannedSessionId: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+  const laps = Array.from({ length: 7 }, (_, i) => ({
+    index: i,
+    kind: i < 2 ? 'manual' : 'automatic',
+    exerciseId: 'synthetic',
+    startedAt: null,
+    elapsedSeconds: i < 2 ? 900 : 420,
+    movingSeconds: null,
+    distanceM: i < 2 ? 2100 : 1000,
+    averageSpeed: null,
+    averageHr: 155,
+    maxHr: 185,
+    sourceKey: 'polar:synthetic',
+  }));
+  const samples = ['HEART_RATE', 'SPEED', 'DISTANCE'].map((type) => ({
+    type,
+    unit: type === 'HEART_RATE' ? 'bpm' : 'provider_unspecified',
+    count: 2100,
+    intervalMillis: 1000,
+  }));
+  await page.route('**/api/activities/*', (r) =>
+    r.fulfill({
+      json: {
+        activity,
+        sources: [],
+        rich: [
+          {
+            sourceKey: 'polar:synthetic',
+            fetchedAt: now,
+            streamStatus: samples.map((s) => ({
+              kind: `Polar exercise 1 · ${s.type}`,
+              samples: s.count,
+              seriesType: 'interval 1000 ms',
+            })),
+            laps,
+            warnings: [],
+            polar: {
+              sensorQuality: 'unknown',
+              exercises: [
+                {
+                  id: 'synthetic',
+                  runningIndex: 38,
+                  trainingLoad: {},
+                  samples,
+                  zones: [],
+                  pauses: [],
+                  routes: {},
+                  statistics: {},
+                },
+              ],
+            },
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto('/activities/synthetic-polar-detail');
+  await expect(page.locator('h1')).toHaveText('Running · 2026-10-01');
+  await expect(
+    page.getByText('35:00 / Unavailable', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('7:00 /km (includes pauses)', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('27 m', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('No available streams.', { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('Samples available; unit unverified', { exact: true }),
+  ).toBeVisible();
+  await page.getByText('Manual laps (2)', { exact: true }).click();
+  await page.getByText('Automatic laps (5)', { exact: true }).click();
+  await expect(
+    page.getByText(
+      /Lap 1 · exercise synthetic: 1000 m · 7:00 · 7:00 \/km elapsed pace/,
+    ),
+  ).toBeVisible();
+  for (const width of [390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
+});
+
 test('Polar canonical sessions become visible in Running after catalog classification, without rich-detail hydration', async ({
   page,
 }) => {

@@ -144,6 +144,8 @@ export interface NormalizedStream {
   originalSize: number | null;
 }
 export interface ActivityLap {
+  kind?: 'manual' | 'automatic';
+  exerciseId?: string | null;
   index: number;
   startedAt: string | null;
   elapsedSeconds: number | null;

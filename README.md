@@ -6,6 +6,12 @@ service or credentials required for local Gym and sample dashboards.
 
 ## Run locally
 
+Polar activity detail separates manual/automatic laps and displays persisted interval
+sample availability. Existing detail is corrected on read without rehydration or raw
+payload changes. Duration/elapsed pace use clock notation; SPEED/DISTANCE sample units
+remain unverified under the current v4 contract, so no sample conversion or drift
+analytics is performed. Empty Polar names display sport and original local date.
+
 Install Node.js 24 LTS and pnpm 11, then run from this directory:
 
 ```sh

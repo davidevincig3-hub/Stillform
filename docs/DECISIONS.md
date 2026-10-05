@@ -1,5 +1,22 @@
 # Decision log
 
+## 2026-10-05 — Polar detail presentation without source mutation
+
+Project existing persisted rich Polar raw data on read through the same normalizer
+used for new hydration. Separate manual and automatic lap families, retaining
+exercise identity. Interval samples are real series, exposed as availability summaries
+without sending value arrays to the browser. Preserve null sample slots rather than
+compressing their timeline. Legacy records need no rewrite or repeat provider fetch.
+
+The v4 IntervalValues contract states sample type and interval but does not establish
+SPEED or DISTANCE sample units. Preserve provider values; do not infer conversions
+from plausible ranges. Elapsed pace uses explicitly named distanceMeters and duration,
+includes pauses, and is not moving pace or physiological analysis. Format duration
+as clock time and pace as seconds per kilometre; round displayed elevation only.
+Empty provider names use sport plus original local date. Preserve genuine names,
+including numeric names. Read projections update old fallback titles without changing
+canonical IDs, provider raw payloads or persisted activities.
+
 ## 2026-10-05 — Polar sport-catalog shape and existing-record classification
 
 The real sports endpoint returns a top-level array. Parse/validate that shape rather

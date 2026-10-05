@@ -183,7 +183,7 @@ export interface PolarFeatures {
       type: string;
       unit: string;
       intervalMillis: number | null;
-      values: number[];
+      values: (number | null)[];
     }[];
     zones: Record<string, unknown>[];
     pauses: Record<string, unknown>[];
