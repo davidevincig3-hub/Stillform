@@ -97,6 +97,16 @@ export const ppiSchema = z.object({
 });
 export type PolarSleep = z.infer<typeof sleepSchema>;
 export type PolarNightly = z.infer<typeof nightlySchema>;
+export const polarDiagnosticSchema = z.object({
+  endpoint: z.string(),
+  status: z.number().int(),
+  contentType: z.string().nullable(),
+  body: z.string().max(4000),
+  refreshed: z.boolean(),
+  refreshAttempted: z.boolean().default(false),
+  family: z.enum([...polarFamilies, 'context', 'authentication']),
+});
+export type PolarDiagnostic = z.infer<typeof polarDiagnosticSchema>;
 export const jobSchema = z.object({
   from: date,
   to: date,
@@ -111,6 +121,7 @@ export const jobSchema = z.object({
   newest: date.nullable(),
   lastSuccess: z.iso.datetime().nullable(),
   errors: z.array(z.string()),
+  diagnostic: polarDiagnosticSchema.nullable().default(null),
 });
 export type PolarJob = z.infer<typeof jobSchema>;
 export const polarStoreSchema = z.object({
@@ -126,6 +137,7 @@ export const polarStoreSchema = z.object({
   metadataSyncedAt: z.iso.datetime().nullable(),
   blockedUntil: z.number(),
   lastRequestAt: z.number(),
+  contextDiagnostic: polarDiagnosticSchema.nullable().default(null),
 });
 export type PolarStore = z.infer<typeof polarStoreSchema>;
 export function emptyPolarStore(): PolarStore {
@@ -142,6 +154,7 @@ export function emptyPolarStore(): PolarStore {
     metadataSyncedAt: null,
     blockedUntil: 0,
     lastRequestAt: 0,
+    contextDiagnostic: null,
   };
 }
 export function newPolarJob(from: string, to: string): PolarJob {

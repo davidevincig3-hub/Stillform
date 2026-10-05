@@ -1,5 +1,23 @@
 # Decision log
 
+## 2026-10-05 — Polar diagnostics and refresh persistence
+
+Retain bounded sanitized provider diagnostics in sync checkpoints/context status
+and authenticated API errors, with exact path/status/content type/body/family and
+successful-refresh flag. Redact sensitive JSON fields, known credentials and
+authorization values before truncation; render error text without HTML execution.
+Existing state defaults diagnostic fields to null without a storage-version change.
+Keep credentials after failed authentication; only explicit disconnect removes them.
+Token-pair persistence remains one encrypted atomic upsert. Accept empty successful
+PostgREST minimal-write responses for HTTP 200/201/204; CAS RPCs still require true.
+
+Live refresh succeeded, but its persisted upsert initially caused a JSON parse error
+because the repository assumed every non-204 success had a JSON body. After fixing
+that wrapper, read-only context calls returned 200 and training returned 400 with
+`Value for key 'from' could not be parsed as datetime`. Stop after that diagnosis:
+date serialization and sport-catalog shape handling are separate follow-up work.
+No live activity/context/checkpoint data was changed by verification.
+
 ## 2026-10-04 — Polar Dynamic API v4 / real source boundaries
 
 Preserve de1091c and dormant Strava architecture. Polar uses current official v4 contract,

@@ -34,22 +34,30 @@ export async function polarAuthorized<T>(
 ) {
   let c = await repo.account(owner, 'polar');
   if (!c) throw new PolarError('Connect Polar first', 409);
+  let refreshed = false;
+  let refreshAttempted = false;
   try {
     if (c.expiresAt * 1000 < Date.now() + 60000) {
+      refreshAttempted = true;
       c = await client.refresh(c);
       await repo.saveAccount(owner, c, 'polar');
+      refreshed = true;
     }
     try {
       return await fn(c);
     } catch (e) {
       if (!(e instanceof PolarError) || e.status !== 401) throw e;
+      refreshAttempted = true;
       c = await client.refresh(c);
       await repo.saveAccount(owner, c, 'polar');
+      refreshed = true;
       return await fn(c);
     }
   } catch (e) {
-    if (e instanceof PolarError && e.status === 401)
-      await repo.removeAccount(owner, 'polar');
+    if (e instanceof PolarError && e.diagnostic) {
+      e.diagnostic.refreshed = refreshed;
+      e.diagnostic.refreshAttempted = refreshAttempted;
+    }
     throw e;
   }
 }
@@ -164,9 +172,11 @@ export async function polarSyncStep(
       job.requests++;
       job.lastSuccess = new Date().toISOString();
       job.errors = [];
+      job.diagnostic = null;
       await repo.savePolar(owner, s.version, state);
       return publicPolarState(state);
     } catch (e) {
+      job.diagnostic = e instanceof PolarError ? e.diagnostic : null;
       job.errors = [
         e instanceof PolarError
           ? e.message
@@ -197,6 +207,7 @@ export function publicPolarState(state: PolarStore) {
     },
     devicesAvailable: Object.keys(state.devices).length > 0,
     sportsAvailable: state.sports.length,
+    contextDiagnostic: state.contextDiagnostic,
   };
 }
 export async function polarMetadata(
@@ -230,9 +241,11 @@ export async function polarMetadata(
         );
       }
       state.metadataSyncedAt = new Date().toISOString();
+      state.contextDiagnostic = null;
       await repo.savePolar(owner, snapshot.version, state);
       return publicPolarState(state);
     } catch (e) {
+      state.contextDiagnostic = e instanceof PolarError ? e.diagnostic : null;
       state.blockedUntil =
         e instanceof PolarError ? e.retryAt : Date.now() + 30000;
       await repo.savePolar(owner, snapshot.version, state);

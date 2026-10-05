@@ -120,7 +120,7 @@ describe('Polar OAuth, scopes and secure storage', () => {
     expect(r.credential).toEqual(connection);
     expect(http).toHaveBeenCalledTimes(2);
   });
-  it('retries one 401, retains connection on scope denial, removes only Polar after revoked refresh', async () => {
+  it('retries one 401 and retains credentials on scope denial or revoked refresh for explicit recovery', async () => {
     const r = repo();
     let requests = 0;
     const http = vi.fn(async (url: RequestInfo | URL) =>
@@ -150,7 +150,7 @@ describe('Polar OAuth, scopes and secure storage', () => {
         async () => null,
       ),
     ).rejects.toMatchObject({ status: 401 });
-    expect(r.polarCredential).toBeNull();
+    expect(r.polarCredential).not.toBeNull();
     expect(r.credential).not.toBeNull();
   });
   it('Polar config is independent of dormant Strava and prefers opaque Supabase secret without Bearer', async () => {

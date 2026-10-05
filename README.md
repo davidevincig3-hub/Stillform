@@ -300,7 +300,21 @@ development credential files.
 
 ## Polar AccessLink Dynamic API v4 — setup and real verification
 
-No real Polar account or database has been used during implementation. Tests use synthetic
+Provider failures retain a bounded, sanitized diagnostic (path, HTTP status,
+content type, error body, family and refresh outcome). Expand **Provider diagnostic**
+in context/sync status; the authenticated API error also contains it. Credentials
+and Authorization headers are never included. Older saved state defaults these
+optional diagnostics to null. Refresh persists the returned token pair together;
+failed authentication retains credentials until explicit disconnect. PostgREST
+minimal-write responses may be empty HTTP 200/201 as well as 204.
+
+Live verification on 2026-10-05: normal refresh succeeded and read-only sports/devices
+returned 200. Training discovery with date-only `2026-09-01` / `2026-10-05` returned
+400: `Value for key 'from' could not be parsed as datetime`. Date serialization
+needs a separate verified refinement before training sync can succeed; no personal
+activity or context data was imported during this diagnostic run.
+
+Automated tests use synthetic
 responses only. Gym/Hevy browser data, backups and Git history are unchanged. Strava client
 credentials are **not required** for Polar. Connection never imports history automatically.
 

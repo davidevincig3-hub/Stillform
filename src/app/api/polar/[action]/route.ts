@@ -44,6 +44,7 @@ function error(e: unknown) {
             ? 'Invalid request or provider response'
             : 'Polar operation unavailable; verify configuration or resume',
       retryAt: e instanceof PolarError ? e.retryAt : 0,
+      diagnostic: e instanceof PolarError ? e.diagnostic : null,
     },
     e instanceof AuthError || e instanceof PolarError
       ? e.status

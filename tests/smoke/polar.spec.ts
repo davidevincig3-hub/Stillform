@@ -158,3 +158,55 @@ test('Polar is independently unconfigured and exposes only missing variable name
   expect(b.missing).not.toContain('STRAVA_CLIENT_ID');
   expect(JSON.stringify(b)).not.toContain('accessToken');
 });
+
+for (const width of [390, 430])
+  test(`Polar provider diagnostics remain readable at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    const state = {
+      ...emptyPolarStore(),
+      counts: { sleep: 0, nightly: 0, continuous: 0, ppi: 0 },
+      jobs: {
+        training: {
+          ...newPolarJob('2026-09-01', '2026-10-05'),
+          errors: ['Polar request failed'],
+          diagnostic: {
+            endpoint: '/v4/data/training-sessions/list',
+            status: 400,
+            contentType: 'application/json',
+            family: 'training',
+            refreshed: true,
+            refreshAttempted: true,
+            body: JSON.stringify({
+              error: "Value for key 'from' could not be parsed as datetime",
+            }),
+          },
+        },
+      },
+    };
+    await page.route('**/api/polar/status', (r) =>
+      r.fulfill({
+        json: {
+          configured: true,
+          authenticated: true,
+          connected: true,
+          scopes: ['training_sessions:read'],
+          state,
+          trainingCount: 0,
+        },
+      }),
+    );
+    await page.goto('/integrations');
+    await page.getByText(/training: Backfill pending/).click();
+    await page.getByText('Provider diagnostic', { exact: true }).click();
+    await expect(page.getByText(/HTTP 400/)).toBeVisible();
+    await expect(
+      page.getByText(/could not be parsed as datetime/),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      )
+      .toBe(true);
+  });

@@ -2,7 +2,13 @@ import 'server-only';
 import { z } from 'zod';
 import type { IntegrationConfig } from './integration-config';
 import type { Connection } from './strava-client';
-import { addDays, windowDays, type PolarFamily } from '../domain/polar';
+import {
+  addDays,
+  windowDays,
+  type PolarFamily,
+  type PolarDiagnostic,
+} from '../domain/polar';
+import { sanitizedPolarBody, polarDiagnosticFamily } from './polar-diagnostics';
 export const POLAR_ENDPOINTS = {
   api: 'https://www.polaraccesslink.com/v4/data',
   authorize: 'https://auth.polar.com/oauth/authorize',
@@ -38,6 +44,7 @@ export class PolarError extends Error {
     message: string,
     public status: number,
     public retryAt = 0,
+    public diagnostic: PolarDiagnostic | null = null,
   ) {
     super(message);
   }
@@ -50,7 +57,11 @@ export class PolarClient {
     private config: IntegrationConfig,
     private http: typeof fetch = fetch,
   ) {}
-  private async request(url: string, init: RequestInit) {
+  private async request(
+    url: string,
+    init: RequestInit,
+    connectionSecrets: string[] = [],
+  ) {
     let r: Response;
     try {
       r = await this.http(url, {
@@ -66,6 +77,39 @@ export class PolarClient {
       );
     }
     if (!r.ok) {
+      const authorization =
+        new Headers(init.headers).get('Authorization') ?? '';
+      const body =
+        init.body instanceof URLSearchParams ? [...init.body.values()] : [];
+      const secrets = [
+        authorization,
+        authorization.replace(/^(Bearer|Basic)\s+/i, ''),
+        this.config.polarClientSecret,
+        this.config.clientSecret,
+        this.config.encryptionKey,
+        this.config.secretKey,
+        this.config.serviceKey,
+        ...body,
+        ...connectionSecrets,
+      ];
+      let raw = '';
+      try {
+        raw = await r.text();
+      } catch {
+        raw = 'Provider error body unavailable';
+      }
+      const endpoint = new URL(url).pathname;
+      const diagnostic: PolarDiagnostic = {
+        endpoint,
+        status: r.status,
+        contentType: r.headers.get('content-type')
+          ? sanitizedPolarBody(r.headers.get('content-type')!, secrets)
+          : null,
+        body: sanitizedPolarBody(raw, secrets),
+        refreshed: false,
+        refreshAttempted: false,
+        family: polarDiagnosticFamily(endpoint),
+      };
       const retry = r.headers.get('Retry-After');
       const seconds = retry ? Number(retry) : NaN;
       const retryAt =
@@ -91,6 +135,7 @@ export class PolarClient {
               : 'Polar request failed',
         r.status,
         retryAt,
+        diagnostic,
       );
     }
     return r.status === 204 ? {} : ((await r.json()) as unknown);
@@ -144,6 +189,8 @@ export class PolarClient {
         throw new PolarError(
           'Polar refresh grant expired or revoked; reconnect',
           401,
+          0,
+          e.diagnostic,
         );
       throw e;
     }
@@ -152,6 +199,7 @@ export class PolarClient {
     return this.request(
       `${POLAR_ENDPOINTS.api}${path}${params ? '?' + params : ''}`,
       { headers: { Authorization: `Bearer ${c.accessToken}` } },
+      [c.accessToken, c.refreshToken],
     );
   }
   async window(

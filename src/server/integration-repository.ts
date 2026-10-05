@@ -84,7 +84,17 @@ export class SupabaseIntegrationRepository implements IntegrationRepository {
       throw new RepositoryError(
         'Secure integration persistence failed; verify migrations and configuration.',
       );
-    return r.status === 204 ? null : ((await r.json()) as unknown);
+    // PostgREST return=minimal writes can return 200/201 with an empty body,
+    // not only 204. RPC callers still require an explicit boolean true.
+    const body = await r.text();
+    if (!body.trim()) return null;
+    try {
+      return JSON.parse(body) as unknown;
+    } catch {
+      throw new RepositoryError(
+        'Secure integration persistence returned invalid JSON.',
+      );
+    }
   }
   async read(owner: string) {
     const rows = (await this.request(

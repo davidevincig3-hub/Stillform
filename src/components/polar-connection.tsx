@@ -5,6 +5,7 @@ import { useWorkout } from './workout-provider';
 import { realHistory } from '@/analytics/gym';
 import { addDays, polarFamilies, type PolarFamily } from '@/domain/polar';
 import type { publicPolarState } from '@/server/polar-service';
+import { PolarDiagnosticDetails } from './polar-diagnostic';
 interface Status {
   configured: boolean;
   authenticated: boolean;
@@ -355,6 +356,7 @@ export function PolarConnection() {
       )}
       {status?.state && (
         <>
+          <PolarDiagnosticDetails diagnostic={status.state.contextDiagnostic} />
           <p>
             {status.trainingCount ?? 0} Polar training sessions ·{' '}
             {status.state.counts.sleep} sleep nights ·{' '}
@@ -395,6 +397,7 @@ export function PolarConnection() {
                   {e}
                 </p>
               ))}
+              <PolarDiagnosticDetails diagnostic={j.diagnostic} />
             </details>
           ))}
         </>
