@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 import { isPrivateIPv4 } from '../src/domain/lan-host.mjs';
+import { lanTlsArguments } from './lan-tls.mjs';
 export { isPrivateIPv4 } from '../src/domain/lan-host.mjs';
 export function lanAddresses(interfaces) {
   return Object.entries(interfaces).flatMap(([name, entries]) =>
@@ -53,6 +54,12 @@ if (
       `Phone: ${protocol}://${host}:3000/gym\nDesktop: ${protocol}://localhost:3000/gym\nPrivate trusted LAN only. Account Gym sign-in requires trusted HTTPS on the phone. Keep integrations/OAuth on their configured origin.`,
     );
     if (!process.argv.includes('--url-only')) {
+      if (
+        !https &&
+        process.argv.some((arg) => arg.startsWith('--experimental-https-'))
+      )
+        throw new Error('Certificate flags require --https.');
+      const tlsArgs = https ? lanTlsArguments(process.argv, host) : [];
       const require = createRequire(import.meta.url);
       const child = spawn(
         process.execPath,
@@ -63,24 +70,7 @@ if (
           '0.0.0.0',
           '--port',
           '3000',
-          ...(https ? ['--experimental-https'] : []),
-          ...[
-            '--experimental-https-key',
-            '--experimental-https-cert',
-            '--experimental-https-ca',
-          ].flatMap((flag) => {
-            const at = process.argv.indexOf(flag);
-            if (at < 0) return [];
-            if (
-              !https ||
-              !process.argv[at + 1] ||
-              process.argv[at + 1].startsWith('--')
-            )
-              throw new Error(
-                `${flag} requires --https and a certificate path`,
-              );
-            return [flag, process.argv[at + 1]];
-          }),
+          ...tlsArgs,
         ],
         { stdio: 'inherit', env: { ...process.env, STILLFORM_LAN_HOST: host } },
       );

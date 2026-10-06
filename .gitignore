@@ -10,4 +10,5 @@ test-results/
 playwright-report/
 local-imports/
 .integration-dev/
+# Local TLS certificates, leaf private keys, public CA copies and optional mkcert tool.
 certificates/

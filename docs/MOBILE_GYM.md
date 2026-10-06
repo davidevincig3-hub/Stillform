@@ -1,165 +1,159 @@
 # Gym on a phone during local development
 
-No public deployment or tunnel is needed. The development computer must stay on,
-awake and connected to the same trusted private LAN as the phone. Local Gym needs
-no integration login. Do not use guest/public Wi-Fi or forward port 3000 on a router.
+Use the same trusted private Wi-Fi as the Windows desktop. Keep the PC awake.
+No public deployment, router port forwarding or tunnel is needed.
 
-## Start deliberately
+## Choose a mode
 
-Stop the existing dev process with Ctrl+C in its terminal, then run:
+| Command          | URL                             | Purpose                                                             |
+| ---------------- | ------------------------------- | ------------------------------------------------------------------- |
+| `pnpm dev`       | `http://localhost:3000`         | Unchanged localhost-only development and integrations/OAuth         |
+| `pnpm dev:lan`   | `http://<private-ip>:3000/gym`  | Existing browser-local Gym; account login is rejected over LAN HTTP |
+| `pnpm dev:https` | `https://<private-ip>:3000/gym` | Trusted LAN account sign-in and shared Supabase Gym                 |
+
+Only one mode can use port 3000 at a time. Stop the previous terminal with Ctrl+C.
+`pnpm lan:url` prints current private IPv4 addresses. With multiple adapters, choose
+Wi-Fi/Ethernet shared with the phone using `--host <listed-ip>`. HTTPS URL discovery:
 
 ```powershell
+pnpm lan:url --https
+pnpm dev:https --host <listed-ip>
+```
+
+Without `--host`, a single private interface is selected automatically. No personal
+IP is saved in the repository. The launcher supplies the selected host to Next's
+exact development-origin allowlist and account Gym origin checks.
+
+## Windows: install mkcert and generate certificates
+
+Follow [mkcert's official installation instructions](https://github.com/FiloSottile/mkcert#installation).
+With Chocolatey installed, run `choco install mkcert`; alternatively use Scoop
+(`scoop bucket add extras`, then `scoop install mkcert`). Neither package manager
+is required: download the Windows binary matching your architecture from the
+[official release](https://github.com/FiloSottile/mkcert/releases), rename it
+`mkcert.exe`, and store it in ignored `certificates/tools/`.
+
+The following commands use that project-local binary, from the repository root.
+For a PATH installation replace `./certificates/tools/mkcert.exe` with `mkcert`.
+
+```powershell
+# Deliberately install your local development CA into Windows trust.
+& ./certificates/tools/mkcert.exe -install
+# Approve the Windows certificate/UAC prompt if shown.
 pnpm lan:url
-pnpm dev:lan
+# Substitute the Wi-Fi/Ethernet address printed above; do not type the brackets.
+$stillformLanIp = '<listed-ip>'
+New-Item -ItemType Directory -Force ./certificates | Out-Null
+& ./certificates/tools/mkcert.exe -key-file ./certificates/stillform-key.pem -cert-file ./certificates/stillform.pem localhost 127.0.0.1 ::1 $stillformLanIp
+$stillformCaFolder = (& ./certificates/tools/mkcert.exe -CAROOT).Trim()
+Copy-Item -LiteralPath (Join-Path $stillformCaFolder 'rootCA.pem') -Destination ./certificates/rootCA.pem
+pnpm dev:https --host $stillformLanIp
 ```
 
-The script lists current private IPv4 interface URLs and selects the only available
-address. If several exist (VPN/virtual adapters included), choose the Wi-Fi/Ethernet
-address actually shared with the phone:
+Open `https://localhost:3000/gym` on the PC, and the printed
+`https://<private-ip>:3000/gym` on the phone. The phone uses the IP, not `localhost`.
+The generated leaf cert/key and public CA copy are in ignored `certificates/`,
+excluded from production traces. The CA private key stays in mkcert's user-specific
+`-CAROOT` folder outside the repository. **Never copy/share `rootCA-key.pem` or the
+leaf private key.** Transfer only `certificates/rootCA.pem` to the phone through a
+trusted file-transfer method. Certificates are not served from the app's public folder.
+
+The launcher requires existing CA-issued files, verifies validity dates, exact IP,
+localhost SAN and matching private key, and fails rather than generating an untrusted
+replacement. Browser trust is separate: identity checks cannot install trust on a phone.
+Custom paths remain available with `--experimental-https-cert` and
+`--experimental-https-key` together; `--experimental-https-ca` is optional.
+Next's HTTPS flags are development-only. No TLS verification bypass is used.
+
+If DHCP changes the IP, run `pnpm lan:url`, regenerate the leaf with the new IP and
+restart with that host. The existing CA remains valid; no new phone CA installation
+is needed. A router DHCP reservation can keep the address stable. Hostnames are usable
+only if they resolve from the phone and are included as certificate SANs; the supported
+launcher uses an actual private IPv4 to avoid relying on local hostname resolution.
+
+## Trust the CA on the phone
+
+A phone must explicitly trust this CA once before entering account credentials.
+Do not continue through a browser certificate warning.
+
+### Android
+
+Copy the public `rootCA.pem` to phone storage (rename the copy `stillform-rootCA.crt`
+if the picker needs a `.crt` extension; content stays unchanged). On recent Android,
+open Settings > Security & privacy > More security settings > Encryption & credentials
+
+> Install a certificate > **CA certificate**, authenticate and select the file.
+> Manufacturer labels differ; use the CA-certificate option, not a Wi-Fi/client certificate.
+> Check it appears under Trusted credentials/User, then reopen Chrome and visit the
+> printed HTTPS IP URL. Android may display a persistent notice about a user-installed CA.
+> See [Android certificate settings](https://support.google.com/pixelphone/answer/2844832).
+> Managed devices may prohibit user CA installation; do not work around device policy.
+
+### iPhone / iPad
+
+Transfer/open the public CA certificate, then Settings > Profile Downloaded (or
+General > VPN & Device Management) > Install, using the device passcode.
+Next go to Settings > General > About > Certificate Trust Settings and enable full
+trust for the mkcert root. Profile installation alone does not enable SSL trust.
+See [Apple's manual trust instructions](https://support.apple.com/en-gb/102390).
+Reopen Safari and visit the printed HTTPS IP URL without a certificate warning.
+
+Remove this specific CA/profile from the phone when local development is no longer
+needed; `mkcert -uninstall` removes desktop trust. Keep the CA key private because
+possession allows issuing certificates trusted by every device where you install it.
+
+## Account sign-in and shared history
+
+Gym > Account Gym > sign in with the existing Stillform account, then Check / reload
+account. Supabase is the durable source of truth: both devices read the same history.
+Do not bootstrap or import the existing history again on the phone. Historical pages
+load on demand; active drafts and pending writes retain their existing persistence.
+Leaving a workout preserves it; reload and use Workout in progress to return.
+Account sign-in uses a separate encrypted HttpOnly cookie, Secure on HTTPS.
+Server credentials remain server-side; no `NEXT_PUBLIC` secret or browser token copy
+is introduced. Use a single device at a time for edits; revision conflicts retain
+pending work for explicit reconciliation.
+
+**Supabase dashboard: no redirect URL or allowed-origin change is required for the
+implemented email/password sign-in.** The server calls the password token endpoint;
+there is no browser OAuth redirect. Keep existing localhost callbacks and `APP_ORIGIN`
+unchanged for Polar/Strava. LAN Gym access is independent of those integrations.
+If redirect-based auth is added later, register its implemented exact HTTPS callback
+under Authentication > URL Configuration > Redirect URLs; do not add broad wildcards.
+
+Browser storage is per origin: HTTPS IP, HTTPS localhost and HTTP localhost are
+separate. Signing into the cloud does not delete/overwrite the original desktop
+HTTP local Gym backup. Local-only Gym remains available without Supabase, but separate
+browser-local stores do not merge. JSON bootstrap is a local-only empty-store fallback,
+not the phone account workflow.
+
+## Windows firewall and troubleshooting
+
+Use a Private Windows network profile for your trusted home network. If Node prompts,
+allow Private networks only. If needed, run this narrow rule in elevated PowerShell,
+substituting the address printed by `pnpm lan:url`:
 
 ```powershell
-pnpm lan:url --host 192.168.1.103
-pnpm dev:lan --host 192.168.1.103
-```
-
-That address is an example, not a fixed configured address. Open the printed
-`http://<computer-private-ip>:3000/gym` on the phone. The launcher binds port 3000
-on the LAN and permits exactly the selected hostname for Next development assets/HMR.
-It does not change integration origins, authentication or environment files. On the
-computer `http://localhost:3000` continues to work. `pnpm dev` now explicitly binds
-only 127.0.0.1; use that command again to return to desktop-only development.
-
-## Windows firewall / network
-
-Use a **Private** Windows network profile only for your trusted home LAN. If Windows
-prompts about Node.js, allow **Private networks only**, never Public networks.
-If an inbound rule is needed, this example is restricted to Private profile,
-port 3000, the chosen local IP, Node and local-subnet clients. Run it yourself in
-an elevated PowerShell after substituting the address printed by `pnpm lan:url`:
-
-```powershell
-$stillformLanIp = '192.168.1.103'
+$stillformLanIp = '<listed-ip>'
 $stillformNodePath = (Get-Command node).Source
 New-NetFirewallRule -DisplayName 'Stillform LAN development' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3000 -LocalAddress $stillformLanIp -RemoteAddress LocalSubnet -Profile Private -Program $stillformNodePath
-```
-
-Remove the development rule when no longer needed:
-
-```powershell
+# Remove when no longer needed:
 Remove-NetFirewallRule -DisplayName 'Stillform LAN development'
 ```
 
-No firewall/profile/router settings are changed automatically. If the page is
-unreachable, verify the current IP, PC sleep state, same network and Wi-Fi client
-isolation. Inspect existing broad Node rules instead of disabling the firewall.
+HTTP and HTTPS use the same TCP port/rule. No firewall or router changes are automatic.
+For unreachable pages check current IP, PC sleep, same network and Wi-Fi client isolation.
+For TLS warnings check device time, CA trust and SAN/IP coverage; regenerate when needed.
+Do not disable the firewall or certificate verification. Supabase sign-in errors should
+be checked separately from TLS/network access. Return to `pnpm dev` after stopping
+HTTPS to use the original localhost integration callbacks.
 
-## Move the existing Gym history once
+## Real-history shortcuts and Hevy continuity
 
-Local storage is **per browser and origin**, not per server. Phone LAN storage,
-desktop localhost storage and desktop LAN storage are separate. A changed IP also
-creates a different origin. Use the same URL/browser consistently and keep backups.
-
-1. On the desktop's existing localhost Gym, open **Backup, export & Hevy import**.
-2. Export the Stillform JSON backup. It includes exercise IDs, mappings, history,
-   preferences, routines and any active workout; it contains no integration secrets.
-3. Transfer that private file to your phone using a method you trust.
-4. In the phone's empty Gym browser, select **Stillform JSON backup**, review the
-   counts and active-workout status, check confirmation and select **Confirm JSON bootstrap**.
-5. Create a routine using **Recent / frequently used exercises**, save it and start.
-   Leave workout, navigate, reload and use **Workout in progress** to resume.
-
-Bootstrap makes one validated atomic copy into an entirely empty, unmodified Gym
-store. It refuses overwrites/merges into populated storage and stale previews.
-It does not delete the desktop copy, infer routines or change exercise IDs/metadata.
-Choose **one browser as the authoritative logger**. Logs made on the phone do not
-automatically appear on desktop; export phone backups regularly. Cross-device merge
-and cloud Gym sync remain future work. Do not clear browser data to reconcile copies.
-
-LAN HTTP is intended for trusted-network local Gym only. Integration login, OAuth,
-sync and credentials stay on localhost; origin checks are unchanged and reject LAN
-writes. Do not enter integration passwords on the phone over LAN HTTP. Server secrets
-remain server-only. Service-worker/PWA installation and secure-context APIs may be
-unavailable over HTTP. IDs use cryptographic getRandomValues where randomUUID is absent.
-Hevy SHA-256 preview requires a secure context: use localhost for Hevy CSV import,
-then bootstrap an empty phone browser from JSON; no CSV is uploaded to hash it.
-
-## Exercise shortlist and ongoing Hevy exports
-
-Only confirmed real completed workouts dated **2026-09-01 or later in Europe/Rome**
-contribute. Future timestamps, demos and unverified legacy data are excluded. An
-exercise with recorded sets counts once per workout even across repeated blocks.
-Logged sets include completed sets and unfinished sets containing recorded fields;
-untouched blank sets do not count. IDs come from the existing library; no exercises,
-muscle metadata or routines are generated.
-
-Ranking is the sum, across workout exposures, of `2^(-calendar-age-days / 28)`.
-Frequent and recent exposures both help; more sets alone cannot inflate ranking.
-Pins come first, then score, latest timestamp, stable exercise ID. This is a navigation
-heuristic, not a performance/physiology score. Pin/unpin and dismiss/restore persist.
-Six suggestions initially appear on Gym, four inside editors; Show more expands in
-small batches. New completed logs update suggestions. Full library/history stays searchable.
-
-A newer complete Hevy CSV can be previewed normally against the existing store. Use
-the **same source timezone**, saved mappings, review summary and explicit confirmation.
-Fingerprints include source dates, metadata and workout-relative row order/content;
-prepending new sessions does not alter older fingerprints. Exact matches are unchanged
-duplicates; only genuinely new workouts and their sets are added. Existing IDs, sets,
-provenance and nullable metadata are preserved. Added workouts/sets, skipped duplicates,
-unchanged workouts and skipped set rows are reported separately.
-
-An edited prior session (including appended sets) changes its fingerprint and is a
-possible duplicate at the same start time. It requires review; **Skip** preserves the
-existing session. **Import separately** is only for a genuinely distinct session.
-Automatic historical editing/set merging is not supported because the CSV has no stable
-workout ID. No deletion or reimport of the existing 287 sessions is required. If you
-continue logging Hevy, keep importing on the authoritative browser; do not assume two
-independent local stores reconcile automatically.
-
-## Shared account Gym on the phone: trusted HTTPS
-
-HTTP LAN still supports the existing browser-local workflow. Cloud sign-in/saves reject
-HTTP outside loopback; do not send account passwords over it. After approved desktop
-bootstrap and schema installation, use an explicitly trusted local TLS certificate that
-covers `localhost`, `127.0.0.1` and the current private IP. Next's documented development
-HTTPS supports user-supplied certificate/key files. Create certificates with a reputable
-local development CA such as mkcert and install its root certificate on your phone
-explicitly. Do not bypass browser certificate warnings or share the CA private key.
-Certificate trust/network/firewall changes are never made by the application.
-
-Keep certificate/key files in ignored `certificates/`. After stopping HTTP dev:
-
-```powershell
-pnpm lan:url --https --host 192.168.1.103
-pnpm dev:lan --https --host 192.168.1.103 --experimental-https-key ./certificates/stillform-key.pem --experimental-https-cert ./certificates/stillform.pem
-```
-
-Open the printed `https://<private-ip>:3000/gym`, with no browser security warning.
-Gym > Account Gym > sign in to the same existing Stillform account, then Check / reload
-account. Do not bootstrap a separate empty phone dataset over existing cloud history.
-The same HTTPS dev instance serves `https://localhost:3000`; its browser-local store is
-separate from HTTP localhost, so perform initial migration from the original HTTP origin
-first. Return to `pnpm dev` for unchanged HTTP localhost integrations/OAuth. HTTPS Gym
-sign-in uses a separate secure HttpOnly session and does not replace Polar credentials.
-
-The plain `--https` flag also enables Next's certificate generation, which may prompt
-for local certificate-tool/trust installation; use supplied certificates for predictable
-phone/IP coverage. No HTTPS setup was applied automatically. Private-network-only
-firewall guidance above still applies. If IP changes, regenerate the IP certificate and
-restart the launcher with the new address. Cloud authority eliminates repeated JSON copies;
-previous empty-browser JSON bootstrap below remains a local-only fallback, not account sync.
-
-For certificate creation, install mkcert using its [official Windows instructions](https://github.com/FiloSottile/mkcert#installation), then run these commands yourself
-(the first deliberately installs your development CA into the desktop trust store):
-
-```powershell
-mkcert -install
-New-Item -ItemType Directory -Force ./certificates
-mkcert -key-file ./certificates/stillform-key.pem -cert-file ./certificates/stillform.pem localhost 127.0.0.1 192.168.1.103
-mkcert -CAROOT
-```
-
-Substitute the current IP printed by `pnpm lan:url`. Transfer only `rootCA.pem` from
-the printed CA folder to your phone and explicitly install/trust it using the phone's
-certificate settings. On iOS, install the profile and enable full trust in Certificate
-Trust Settings. Never transfer `rootCA-key.pem`. See [mkcert's mobile guidance](https://github.com/FiloSottile/mkcert#mobile-devices).
-No CA, certificate, browser trust exception or firewall change has been applied by this task.
+Recent/frequent exercises use confirmed real history since 2026-09-01 in Europe/Rome.
+Ranking sums `2^(-calendar-age-days / 28)` per exposure, with pins first and deterministic
+latest-date/ID ties. Unknown muscle metadata stays unassigned; routines are never inferred.
+Gym shows three recent workouts and searchable full history, not the entire exercise list.
+A newer Hevy export skips identical fingerprints and adds new sessions after preview and
+confirmation. Edited historical sessions require duplicate review, not silent set merging.
+Keep the same source timezone and saved mappings; no historical deletion/reimport is needed.

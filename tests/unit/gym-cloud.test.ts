@@ -384,6 +384,56 @@ describe('account Gym persistence', () => {
       ),
     ).toThrow();
   });
+  it('resolves Next HTTPS bind-host URLs only to exact allowed browser authorities and preserves write-origin checks', () => {
+    const env = {
+      NODE_ENV: 'development' as const,
+      APP_ORIGIN: 'http://localhost:3000',
+      SUPABASE_URL: config.supabaseUrl,
+      SUPABASE_PUBLISHABLE_KEY: 'synthetic',
+      SUPABASE_SECRET_KEY: 'synthetic',
+      INTEGRATION_ENCRYPTION_KEY: 'ab'.repeat(32),
+      STILLFORM_LAN_HOST: '192.168.10.20',
+    };
+    const request = (
+      host: string,
+      origin = `https://${host}`,
+      protocol = 'https',
+    ) =>
+      new Request(`${protocol}://0.0.0.0:3000/api/gym`, {
+        method: 'POST',
+        headers: {
+          host,
+          origin,
+          'x-forwarded-proto': 'https',
+          'x-forwarded-host': '192.168.10.20:3000',
+        },
+      });
+    for (const host of [
+      '192.168.10.20:3000',
+      'localhost:3000',
+      '127.0.0.1:3000',
+    ])
+      expect(gymConfig(request(host), env).origin).toBe(`https://${host}`);
+    for (const host of [
+      'foreign.test:3000',
+      '192.168.10.21:3000',
+      '192.168.10.20:444',
+      'localhost:3000@foreign.test',
+    ])
+      expect(() => gymConfig(request(host), env)).toThrow();
+    expect(() =>
+      gymConfig(request('192.168.10.20:3000', 'https://foreign.test'), env),
+    ).toThrow('origin is not trusted');
+    expect(() =>
+      gymConfig(request('192.168.10.20:3000', undefined, 'http'), env),
+    ).toThrow();
+    expect(() =>
+      gymConfig(request('192.168.10.20:3000'), {
+        ...env,
+        NODE_ENV: 'production',
+      }),
+    ).toThrow();
+  });
   it('blocks an account switch before any server write even when its revision happens to match', async () => {
     const fetcher = vi.fn<typeof fetch>();
     const repo = new SupabaseGymRepository(config, fetcher);

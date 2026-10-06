@@ -49,8 +49,12 @@ Open http://localhost:3000. No `.env` is required. `.env.example` documents opti
 For a phone on the same trusted private LAN, run `pnpm lan:url`, stop the existing
 server and run `pnpm dev:lan`. Open the printed `http://<private-ip>:3000/gym`.
 `pnpm dev` binds only localhost; LAN exposure is explicit. See
-[mobile Gym setup](docs/MOBILE_GYM.md) for Windows firewall steps, JSON bootstrap
-into an empty phone browser, per-origin storage and secure-context limitations.
+[mobile Gym setup](docs/MOBILE_GYM.md) for Windows firewall and per-origin storage.
+For shared account Gym, install/trust the documented mkcert CA on Windows and your
+phone, generate the current IP certificate, then run `pnpm dev:https`. Open the printed
+`https://<private-ip>:3000/gym` and sign into the same account; no repeated history
+bootstrap or Supabase password-auth redirect change is needed. HTTPS starts only with
+existing valid matching certificates in ignored `certificates/`.
 Gym offers a real-history shortlist since 2026-09-01 with pins/dismissals and
 exposure/set counts. Incremental Hevy exports skip unchanged fingerprints;
 edited existing sessions require review, never silent merging.

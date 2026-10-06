@@ -353,3 +353,19 @@ timestamps and provider removal semantics belong in the future precedence policy
 ## 2026-10-06 — Quota-safe account Gym
 
 Replace duplicated full localStorage draft/pending snapshots with version-2 owner/revision/active metadata and an IndexedDB unsynced journal. Bootstrap does not require a synchronous full account cache. Supabase remains durable authority; ID-based deltas preserve unloaded history. Keep existing atomic SQL revision/receipt semantics and the independent desktop backup. Server RPC reconstruction remains a documented scaling limitation; no offline framework or new dependency.
+
+## 2026-10-06 — Explicit trusted HTTPS LAN development
+
+`pnpm dev:https` reuses the private-interface launcher with existing mkcert CA-issued
+files in ignored `certificates/`. Validate dates, exact IP/localhost identity and
+matching key before starting; never silently generate a replacement or bypass TLS
+trust. CA installation is an explicit Windows/phone setup step. Keep localhost HTTP,
+HTTP LAN, integration callback origins and server-only secrets unchanged. Current
+server-side password sign-in needs no Supabase redirect allowlist change. See
+[mobile setup](MOBILE_GYM.md) for trust, certificate renewal and firewall steps.
+
+Next HTTPS development constructs server Request URLs with `0.0.0.0`. For that
+exact HTTPS development bind origin only, Gym resolves the Host authority against
+localhost/loopback and the launcher's one verified private IP. POST Origin must
+still match exactly; forwarded headers cannot grant access, HTTP LAN remains
+rejected, and production origin policy is unchanged.

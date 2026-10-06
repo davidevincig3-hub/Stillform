@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "dev:lan": "node scripts/dev-lan.mjs",
+    "dev:https": "node scripts/dev-lan.mjs --https",
     "lan:url": "node scripts/dev-lan.mjs --url-only",
     "build": "next build",
     "start": "next start",

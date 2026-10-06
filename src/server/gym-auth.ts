@@ -28,6 +28,16 @@ export function gymConfig(
       503,
     );
   const url = new URL(request.url);
+  // Next's HTTPS development server constructs Request.url with its bind host
+  // (0.0.0.0), not the browser host. Resolve only exact allowed TLS authorities;
+  // never trust forwarded protocol/host headers or relax HTTP LAN restrictions.
+  if (env.NODE_ENV === 'development' && url.origin === 'https://0.0.0.0:3000') {
+    const host = request.headers.get('host');
+    const allowed = ['localhost:3000', '127.0.0.1:3000'];
+    if (env.STILLFORM_LAN_HOST && isPrivateIPv4(env.STILLFORM_LAN_HOST))
+      allowed.push(`${env.STILLFORM_LAN_HOST}:3000`);
+    if (host && allowed.includes(host)) url.host = host;
+  }
   const loopback = ['localhost', '127.0.0.1'].includes(url.hostname);
   const trustedLan =
     env.NODE_ENV === 'development' &&
