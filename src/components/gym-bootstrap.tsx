@@ -7,12 +7,13 @@ import {
   commitGymBootstrap,
 } from '@/repositories/gym-export';
 export function GymBootstrap() {
-  const { store, ready, error, save } = useWorkout();
+  const { store, ready, error, save, cloud } = useWorkout();
   const [plan, setPlan] = useState<ReturnType<
     typeof previewGymBootstrap
   > | null>(null);
   const [approved, setApproved] = useState(false);
   const [message, setMessage] = useState('');
+  if (cloud.cache) return null;
   return (
     <section>
       <h3>Set up an empty phone / browser from JSON</h3>

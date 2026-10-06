@@ -39,7 +39,7 @@ async function api(action: string, input?: unknown) {
   return body;
 }
 export function StravaConnection() {
-  const { store } = useWorkout();
+  const { store, cloud, cloudClient } = useWorkout();
   const [status, setStatus] = useState<ConnectionStatus | null>(null),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
@@ -96,7 +96,10 @@ export function StravaConnection() {
     setBusy(true);
     setMessage('Synchronizing one page at a time…');
     try {
-      const gym = realHistory(store.history).map((w) => ({
+      const source = cloud.cache
+        ? (await cloudClient.read({ scope: 'all' })).store!
+        : store;
+      const gym = realHistory(source.history).map((w) => ({
         id: w.id,
         title: w.routineName,
         startedAt: w.startedAt,

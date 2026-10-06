@@ -13,7 +13,7 @@ function download(text: string, name: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export function GymExportControls() {
-  const { store, ready, error } = useWorkout();
+  const { store, ready, error, cloud, cloudClient } = useWorkout();
   const [message, setMessage] = useState('');
   return (
     <details className="card">
@@ -27,10 +27,13 @@ export function GymExportControls() {
         <button
           className="secondary"
           disabled={!ready || Boolean(error)}
-          onClick={() => {
+          onClick={async () => {
             try {
+              const full = cloud.cache
+                ? (await cloudClient.read({ scope: 'all' })).store!
+                : store;
               download(
-                exportGymJson(store),
+                exportGymJson(full),
                 'stillform-gym-backup-v1.json',
                 'application/json',
               );
@@ -47,13 +50,20 @@ export function GymExportControls() {
         <button
           className="secondary"
           disabled={!ready || Boolean(error)}
-          onClick={() =>
-            download(
-              exportGymCsv(store),
-              'stillform-gym-history.csv',
-              'text/csv;charset=utf-8',
-            )
-          }
+          onClick={async () => {
+            try {
+              const full = cloud.cache
+                ? (await cloudClient.read({ scope: 'all' })).store!
+                : store;
+              download(
+                exportGymCsv(full),
+                'stillform-gym-history.csv',
+                'text/csv;charset=utf-8',
+              );
+            } catch {
+              setMessage('History export failed. Nothing exported.');
+            }
+          }}
         >
           Export CSV history
         </button>

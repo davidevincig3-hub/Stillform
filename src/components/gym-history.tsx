@@ -1,22 +1,35 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useGymHistory } from './use-gym-history';
 import { useWorkout } from './workout-provider';
 import { realHistory, formatSet } from '@/analytics/gym';
 import { findWorkoutHistory } from '@/analytics/gym-history';
 export function GymHistory({ full = false }: { full?: boolean }) {
-  const { store } = useWorkout();
+  const context = useWorkout();
   const [page, setPage] = useState(0);
   const [opened, setOpened] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState(''),
     [title, setTitle] = useState(''),
     [from, setFrom] = useState(''),
     [to, setTo] = useState('');
+  const loaded = useGymHistory({
+    scope: full ? 'history' : 'workspace',
+    page,
+    query,
+    title,
+    from,
+    to,
+  });
+  const { store } = full ? loaded : context;
+  const remote = full && !!context.cloud.cache;
   const history = findWorkoutHistory(store.history, query, title, from, to);
   const size = full ? 20 : 3;
-  const actualPage = full
-    ? Math.min(page, Math.max(0, Math.ceil(history.length / size) - 1))
-    : 0;
+  const actualPage = remote
+    ? page
+    : full
+      ? Math.min(page, Math.max(0, Math.ceil(history.length / size) - 1))
+      : 0;
   return (
     <>
       <div className="section-heading">
@@ -47,7 +60,8 @@ export function GymHistory({ full = false }: { full?: boolean }) {
               <option value="">All titles</option>
               {[
                 ...new Set(
-                  realHistory(store.history).map((w) => w.routineName),
+                  loaded.titles ??
+                    realHistory(store.history).map((w) => w.routineName),
                 ),
               ]
                 .sort()
@@ -83,14 +97,19 @@ export function GymHistory({ full = false }: { full?: boolean }) {
         </section>
       )}
       <section className="card">
-        {!history.length ? (
+        {remote && !loaded.ready ? (
+          <p role="status">{loaded.historyError || 'Loading history…'}</p>
+        ) : !history.length ? (
           <p className="muted">
             No confirmed completed workouts yet. Finish a workout to build your
             history.
           </p>
         ) : (
           history
-            .slice(actualPage * size, actualPage * size + size)
+            .slice(
+              remote ? 0 : actualPage * size,
+              remote ? size : actualPage * size + size,
+            )
             .map((w) => (
               <details
                 key={w.id}
@@ -144,7 +163,7 @@ export function GymHistory({ full = false }: { full?: boolean }) {
           View all completed workouts →
         </Link>
       )}
-      {full && history.length > size && (
+      {full && (loaded.total ?? history.length) > size && (
         <div className="row start">
           <button
             className="secondary"
@@ -156,7 +175,9 @@ export function GymHistory({ full = false }: { full?: boolean }) {
           <span>Page {actualPage + 1}</span>
           <button
             className="secondary"
-            disabled={(actualPage + 1) * size >= history.length}
+            disabled={
+              (actualPage + 1) * size >= (loaded.total ?? history.length)
+            }
             onClick={() => setPage(actualPage + 1)}
           >
             Next workouts

@@ -12,9 +12,10 @@ export function RecentExercises({
   onAdd?: (id: string) => void;
   compact?: boolean;
 }) {
-  const { store, ready, save } = useWorkout();
+  const { store, ready, save, cloud } = useWorkout();
   const [limit, setLimit] = useState(compact ? 4 : 6);
-  const { rows, detected, dismissed } = recentExercises(store);
+  const { rows, detected, dismissed } =
+    cloud.snapshot?.summary?.shortlist ?? recentExercises(store);
   return (
     <section className="card recent-exercises" data-testid="recent-exercises">
       <h2>Recent / frequently used exercises</h2>

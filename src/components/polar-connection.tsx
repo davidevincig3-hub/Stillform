@@ -37,7 +37,7 @@ async function api(action: string, input?: unknown) {
   return b;
 }
 export function PolarConnection() {
-  const { store } = useWorkout();
+  const { store, cloud, cloudClient } = useWorkout();
   const [status, setStatus] = useState<Status | null>(null),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(''),
@@ -107,7 +107,10 @@ export function PolarConnection() {
     setBusy(true);
     setMessage('Syncing bounded windows…');
     try {
-      const gym = realHistory(store.history).map((w) => ({
+      const source = cloud.cache
+        ? (await cloudClient.read({ scope: 'all' })).store!
+        : store;
+      const gym = realHistory(source.history).map((w) => ({
         id: w.id,
         title: w.routineName,
         startedAt: w.startedAt,

@@ -6,6 +6,7 @@ import {
   requireGymOwner,
   GYM_SESSION_COOKIE,
 } from '@/server/gym-auth';
+import { gymReadQuerySchema } from '@/repositories/gym-cloud-query';
 import { GymCloudError, SupabaseGymRepository } from '@/server/gym-repository';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,12 @@ export async function GET(request: Request) {
     const config = gymConfig(request),
       owner = await requireGymOwner(config);
     return NextResponse.json(
-      await new SupabaseGymRepository(config).read(owner),
+      await new SupabaseGymRepository(config).read(
+        owner,
+        gymReadQuerySchema.parse(
+          Object.fromEntries(new URL(request.url).searchParams),
+        ),
+      ),
       { headers },
     );
   } catch (error) {

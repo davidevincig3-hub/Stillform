@@ -4,6 +4,9 @@ import {
   gymStoreSchema,
   type GymStore,
 } from '../../src/repositories/gym-storage';
+import { syntheticGymHistory } from '../helpers/gym-history';
+import { selectGymView } from '../../src/repositories/gym-cloud-query';
+import { applyGymChanges } from '../../src/repositories/gym-cloud-changes';
 const owner = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 for (const width of [390, 430, 1143])
   test(`account Gym cross-device persistence and retry at ${width}px`, async ({
@@ -14,7 +17,7 @@ for (const width of [390, 430, 1143])
       loseResponse = false;
     const receipts = new Map<string, number>();
     const install = async (context: BrowserContext) =>
-      context.route('**/api/gym', async (route) => {
+      context.route('**/api/gym{,?*}', async (route) => {
         if (route.request().method() === 'GET')
           return route.fulfill({
             json: { owner, revision, initialized: !!store, store },
@@ -33,7 +36,9 @@ for (const width of [390, 430, 1143])
                 'Another device changed account Gym data. Reload cloud data; draft retained.',
             },
           });
-        store = gymStoreSchema.parse(body.store);
+        store = gymStoreSchema.parse(
+          body.changes ? applyGymChanges(store!, body.changes) : body.store,
+        );
         revision++;
         receipts.set(body.operation, revision);
         if (loseResponse) {
@@ -228,3 +233,108 @@ test('migration approval is invalidated when the desktop snapshot changes', asyn
   ).not.toBeChecked();
   await expect(confirm).toBeDisabled();
 });
+
+for (const width of [390, 430])
+  test(
+    'bounded large-account bootstrap and paged history at ' + width + 'px',
+    async ({ page }) => {
+      const seed = syntheticGymHistory(80);
+      for (const w of seed.history) w.notes = 'Synthetic note '.repeat(200);
+      let account: GymStore | null = null,
+        revision = 0;
+      const receipts = new Map<string, number>();
+      await page.setViewportSize({ width, height: 900 });
+      await page.addInitScript((s) => {
+        localStorage.setItem('adaptive-coach.gym.v2', JSON.stringify(s));
+        const original = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (k, v) {
+          if (k.startsWith('stillform.gym.account.') && v.length > 16000)
+            throw new DOMException('Synthetic quota', 'QuotaExceededError');
+          original.call(this, k, v);
+        };
+      }, seed);
+      await page.route('**/api/gym{,?*}', async (route) => {
+        if (route.request().method() === 'GET') {
+          const query = Object.fromEntries(
+            new URL(route.request().url()).searchParams,
+          );
+          return route.fulfill({
+            json: {
+              owner,
+              revision,
+              initialized: !!account,
+              ...(account ? selectGymView(account, query) : { store: null }),
+            },
+          });
+        }
+        const p = route.request().postDataJSON();
+        const receipt = receipts.get(p.operation);
+        if (receipt) return route.fulfill({ json: { revision: receipt } });
+        if (p.expected !== revision || (p.bootstrap && account))
+          return route.fulfill({
+            status: 409,
+            json: { error: 'Stale revision' },
+          });
+        account = p.changes
+          ? applyGymChanges(account!, p.changes)
+          : gymStoreSchema.parse(p.store);
+        revision++;
+        receipts.set(p.operation, revision);
+        return route.fulfill({ json: { revision } });
+      });
+      await page.goto('/gym');
+      const backup = await page.evaluate(() =>
+        localStorage.getItem('adaptive-coach.gym.v2'),
+      );
+      await page
+        .getByText('Account Gym · browser-local', { exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Check / reload account', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Preview desktop migration', exact: true })
+        .click();
+      await page.getByRole('checkbox', { name: /I approve uploading/ }).check();
+      await page
+        .getByRole('button', { name: 'Confirm account bootstrap', exact: true })
+        .click();
+      await expect(
+        page
+          .getByRole('region', { name: 'Account Gym persistence' })
+          .getByRole('status'),
+      ).toHaveText('Account Gym: synced');
+      await expect.poll(() => account?.history.length).toBe(80);
+      expect(receipts.size).toBe(1);
+      const metadata = await page.evaluate(
+        (id) =>
+          JSON.parse(localStorage.getItem('stillform.gym.account.' + id)!),
+        owner,
+      );
+      expect(metadata).not.toHaveProperty('draft');
+      expect(
+        await page.evaluate(() =>
+          localStorage.getItem('adaptive-coach.gym.v2'),
+        ),
+      ).toBe(backup);
+      await page
+        .getByRole('link', {
+          name: 'View all completed workouts →',
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByRole('button', { name: 'Next workouts', exact: true }),
+      ).toBeEnabled();
+      await page
+        .getByRole('button', { name: 'Next workouts', exact: true })
+        .click();
+      await expect(page.getByText('Page 2', { exact: true })).toBeVisible();
+      await expect(page.getByText(/Synthetic workout 059 ·/)).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    },
+  );

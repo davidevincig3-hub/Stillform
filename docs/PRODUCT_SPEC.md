@@ -213,3 +213,5 @@ is represented as null and reported separately as Unassigned. Full superset prog
   import, rescheduling, physiological score, Polar, Calendar, Consensus or real Coach.
 - Public webhooks acknowledge persisted events quickly; processing checks API truth. Localhost
   uses manual sync; live subscription and background worker setup remain deliberate later steps.
+
+Account Gym uses bounded server views and lightweight metadata/active drafts in localStorage. IndexedDB retains only unsynced operations, with revision CAS and immutable receipt retries. Historical pages, previous exposures, exports and Hevy previews load on demand; unloaded history is preserved by entity deltas. See [quota-safe account persistence](GYM_CLOUD.md#bounded-reads-and-quota-behavior).

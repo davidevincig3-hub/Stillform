@@ -2,8 +2,9 @@
 import { useWorkout } from './workout-provider';
 import { weeklyGymSummary } from '@/analytics/gym';
 export function GymAnalytics() {
-  const { store } = useWorkout();
-  const summary = weeklyGymSummary(store.history);
+  const { store, cloud } = useWorkout();
+  const summary =
+    cloud.snapshot?.summary?.weekly ?? weeklyGymSummary(store.history);
   return (
     <>
       <div className="section-heading">

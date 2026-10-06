@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import {
   GymCloudClient,
   CloudRequestError,
@@ -26,6 +27,9 @@ import {
   buildHevyPlan,
 } from '../../src/integrations/hevy-import';
 import { hevyColumns } from '../../src/integrations/hevy-import';
+import { selectGymView } from '../../src/repositories/gym-cloud-query';
+import { gymChanges } from '../../src/repositories/gym-cloud-changes';
+import { applyGymChanges } from '../../src/repositories/gym-cloud-changes';
 const owner = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 function memoryStorage() {
   const data = new Map<string, string>();
@@ -37,18 +41,22 @@ function memoryStorage() {
     data,
   };
 }
-function server() {
+function server(bounded = false) {
   const accounts = new Map<string, { revision: number; store: GymStore }>();
   const receipts = new Map<string, { body: string; revision: number }>();
   let failAfterCommit = false;
   const transport = (user = owner): GymCloudTransport => ({
-    async read() {
+    async read(query) {
       const a = accounts.get(user);
       return {
         owner: user,
         revision: a?.revision ?? 0,
         initialized: !!a,
-        store: a ? decodeGym(encodeGym(a.store)) : null,
+        ...(a
+          ? bounded
+            ? selectGymView(a.store, query ?? { scope: 'workspace' })
+            : { store: decodeGym(encodeGym(a.store)) }
+          : { store: null }),
       };
     },
     async write(p) {
@@ -63,7 +71,14 @@ function server() {
       if ((a?.revision ?? 0) !== p.expected || (p.bootstrap ? !!a : !a))
         throw new CloudRequestError('Stale revision', 409);
       const revision = (a?.revision ?? 0) + 1;
-      accounts.set(user, { revision, store: decodeGym(encodeGym(p.store)) });
+      accounts.set(user, {
+        revision,
+        store: decodeGym(
+          encodeGym(
+            p.changes ? applyGymChanges(a!.store, p.changes) : p.store!,
+          ),
+        ),
+      });
       receipts.set(key, { body, revision });
       if (failAfterCommit) {
         failAfterCommit = false;
@@ -222,7 +237,7 @@ describe('account Gym persistence', () => {
   it('retains edits made while a save is in flight and applies a second revision', async () => {
     const db = server(),
       normal = db.transport();
-    let release!: () => void;
+    let release: (() => void) | undefined;
     const c = new GymCloudClient(normal, memoryStorage());
     await c.connect();
     c.bootstrap(syntheticGymHistory(3));
@@ -248,9 +263,12 @@ describe('account Gym persistence', () => {
       },
     };
     queue.edit(two, one);
-    release();
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+    release!();
+    release = undefined;
     await vi.waitFor(() => expect(queue.state.cache!.revision).toBe(2));
-    release();
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+    release!();
     await settle(queue);
     expect(db.accounts.get(owner)?.store).toEqual(gymStoreSchema.parse(two));
     expect(db.accounts.get(owner)?.revision).toBe(3);
@@ -380,4 +398,245 @@ describe('account Gym persistence', () => {
     ).rejects.toMatchObject({ status: 403 });
     expect(fetcher).not.toHaveBeenCalled();
   });
+});
+
+function memoryJournal() {
+  const data = new Map<string, string>();
+  return {
+    data,
+    get: async (k: string) => data.get(k) ?? null,
+    put: async (k: string, v: string) => {
+      data.set(k, v);
+    },
+    remove: async (k: string) => {
+      data.delete(k);
+    },
+  };
+}
+describe('bounded cloud persistence and large accounts', () => {
+  it('bootstraps an account larger than localStorage without caching history and retries a lost response once', async () => {
+    const db = server(true),
+      local = memoryStorage(),
+      journal = memoryJournal();
+    const large = syntheticGymHistory(287);
+    for (const w of large.history) {
+      w.exercises = [
+        {
+          ...structuredClone(large.history[0].exercises[0]),
+          id: 'large-ex-' + w.id,
+          notes: 'Synthetic large snapshot '.repeat(1200),
+          sets: [
+            {
+              ...large.history[0].exercises[0].sets[0],
+              id: 'large-set-' + w.id,
+            },
+          ],
+        },
+      ];
+    }
+    expect(JSON.stringify(large).length).toBeGreaterThan(5 * 1024 * 1024);
+    const backup = JSON.stringify(large);
+    local.setItem('adaptive-coach.gym.v2', backup);
+    const limited = {
+      getItem: local.getItem,
+      setItem: (k: string, v: string) => {
+        if (v.length > 16000)
+          throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        local.setItem(k, v);
+      },
+    };
+    const client = new GymCloudClient(db.transport(), limited, journal);
+    await client.connect();
+    db.loseResponse();
+    client.bootstrap(large);
+    await settle(client);
+    expect(client.state.status).toBe('error');
+    expect(db.accounts.get(owner)!.store.history).toHaveLength(287);
+    const reload = new GymCloudClient(db.transport(), limited, journal);
+    reload.restore();
+    await reload.connect();
+    expect(reload.state.status).toBe('synced');
+    expect(reload.state.cache!.draft.history).toHaveLength(3);
+    expect(db.receipts.size).toBe(1);
+    expect(journal.data.size).toBe(0);
+    expect(local.getItem('adaptive-coach.gym.v2')).toBe(backup);
+    const metadata = JSON.parse(
+      local.getItem('stillform.gym.account.' + owner)!,
+    );
+    expect(metadata).not.toHaveProperty('draft');
+    expect(metadata).not.toHaveProperty('history');
+    const page = await reload.read({ scope: 'history', page: 1 });
+    expect(page.store!.history).toHaveLength(20);
+    expect(page.summary!.total).toBe(287);
+    const first = selectGymView(large, { scope: 'history' }).store.history;
+    expect(
+      page.store!.history.some((w) => first.some((x) => x.id === w.id)),
+    ).toBe(false);
+  });
+  it('journals only changed workout drafts, restores active sets and retries without duplicating unloaded history', async () => {
+    const db = server(true),
+      local = memoryStorage(),
+      journal = memoryJournal();
+    const client = new GymCloudClient(db.transport(), local, journal);
+    await client.connect();
+    client.bootstrap(withRoutine(syntheticGymHistory(40)));
+    await settle(client);
+    const original = db.accounts.get(owner)!.store.history;
+    let before = client.state.cache!.draft;
+    db.loseResponse();
+    const active = startGymWorkout(before, before.routines[0]);
+    active.active!.exercises[0].sets[0].weight = 61;
+    active.active!.exercises[0].sets[0].reps = 8;
+    active.active!.exercises[0].sets[0].completed = true;
+    expect(client.edit(active, before)).toBe(true);
+    await settle(client);
+    const pending = JSON.parse([...journal.data.values()][0]);
+    expect(pending.pending.store).toBeUndefined();
+    expect(pending.pending.changes.arrays.history).toBeUndefined();
+    const reload = new GymCloudClient(db.transport(), local, journal);
+    reload.restore();
+    await reload.connect();
+    expect(reload.state.cache!.draft.active!.exercises[0].sets[0].weight).toBe(
+      61,
+    );
+    expect(db.accounts.get(owner)!.store.history).toEqual(original);
+    before = reload.state.cache!.draft;
+    expect(reload.edit(finishGymWorkout(before), before)).toBe(true);
+    await settle(reload);
+    expect(db.accounts.get(owner)!.store.history).toHaveLength(41);
+    expect(
+      new Set(db.accounts.get(owner)!.store.history.map((w) => w.id)).size,
+    ).toBe(41);
+    expect(db.receipts.size).toBe(3);
+  });
+  it('uses deltas for loaded detail deletion without deleting unloaded sessions', () => {
+    const full = syntheticGymHistory(50);
+    const view = selectGymView(full, {
+      scope: 'workout',
+      id: full.history[25].id,
+    }).store;
+    const changes = gymChanges(view, { ...view, history: [] });
+    const next = applyGymChanges(full, changes);
+    expect(next.history).toHaveLength(49);
+    expect(next.history.some((w) => w.id === full.history[25].id)).toBe(false);
+    expect(next.history.find((w) => w.id === full.history[0].id)).toEqual(
+      full.history[0],
+    );
+  });
+  it('does not upload if the pending journal cannot be committed', async () => {
+    const db = server(),
+      local = memoryStorage();
+    const journal = memoryJournal();
+    journal.put = async () => {
+      throw Error('IndexedDB unavailable');
+    };
+    const client = new GymCloudClient(db.transport(), local, journal);
+    await client.connect();
+    client.bootstrap(syntheticGymHistory(3));
+    await settle(client);
+    expect(client.state.status).toBe('error');
+    expect(db.accounts.size).toBe(0);
+    expect(db.receipts.size).toBe(0);
+  });
+});
+
+it('preserves input arriving during asynchronous journal acknowledgement', async () => {
+  const db = server(),
+    journal = memoryJournal(),
+    local = memoryStorage();
+  const normalRemove = journal.remove;
+  let hold = false,
+    release: (() => void) | undefined;
+  journal.remove = async (key) => {
+    if (hold) {
+      hold = false;
+      await new Promise<void>((r) => {
+        release = r;
+      });
+    }
+    await normalRemove(key);
+  };
+  const client = new GymCloudClient(db.transport(), local, journal);
+  await client.connect();
+  client.bootstrap(syntheticGymHistory(3));
+  await settle(client);
+  const before = client.state.cache!.draft,
+    one = withRoutine(before);
+  hold = true;
+  client.edit(one, before);
+  await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+  const two = {
+    ...one,
+    exercisePreferences: {
+      [one.exercises[0].id]: { pinned: true, dismissed: false },
+    },
+  };
+  client.edit(two, one);
+  release!();
+  await vi.waitFor(() => expect(db.accounts.get(owner)!.revision).toBe(3));
+  await settle(client);
+  expect(db.accounts.get(owner)!.store).toEqual(two);
+  expect(journal.data.size).toBe(0);
+});
+
+it('merges a historical page edit on the server without removing unloaded rows', async () => {
+  const full = syntheticGymHistory(50),
+    view = selectGymView(full, {
+      scope: 'workout',
+      id: full.history[20].id,
+    }).store;
+  const changes = gymChanges(view, { ...view, history: [] });
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response('[]'))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          revision: 1,
+          initialized: true,
+          document: encodeGym(full),
+        }),
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true, revision: 2 })),
+    );
+  const repo = new SupabaseGymRepository(config, fetcher);
+  await repo.save(owner, {
+    owner,
+    expected: 1,
+    operation: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    bootstrap: false,
+    changes,
+  });
+  const payload = JSON.parse(fetcher.mock.calls[2][1]!.body as string);
+  const saved = decodeGym(payload.p_document);
+  expect(saved.history).toHaveLength(49);
+  expect(saved.history.find((w) => w.id === full.history[0].id)).toEqual(
+    full.history[0],
+  );
+  expect(payload.p_expected).toBe(1);
+});
+it('resolves a delta receipt before reading newer revisions on a lost-response retry', async () => {
+  const before = syntheticGymHistory(3),
+    changes = gymChanges(before, withRoutine(before));
+  const digest = createHash('sha256')
+    .update(JSON.stringify({ expected: 1, bootstrap: false, changes }))
+    .digest('hex');
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify([{ digest, revision: 2 }])),
+    );
+  const repo = new SupabaseGymRepository(config, fetcher);
+  await expect(
+    repo.save(owner, {
+      owner,
+      expected: 1,
+      operation: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      bootstrap: false,
+      changes,
+    }),
+  ).resolves.toMatchObject({ revision: 2, replayed: true });
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });

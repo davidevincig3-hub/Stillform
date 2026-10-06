@@ -14,9 +14,13 @@ export function ExercisePicker({
   value: string;
   onChange: (id: string) => void;
 }) {
-  const { store, save } = useWorkout();
+  const { store, save, cloud } = useWorkout();
   const [query, setQuery] = useState('');
-  const recent = new Set(recentExercises(store).rows.map((r) => r.exercise.id));
+  const recent = new Set(
+    (cloud.snapshot?.summary?.shortlist ?? recentExercises(store)).rows.map(
+      (r) => r.exercise.id,
+    ),
+  );
   const matched = store.exercises.filter(
     (e) =>
       e.id === value ||

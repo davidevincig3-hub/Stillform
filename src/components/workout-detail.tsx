@@ -2,11 +2,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useWorkout } from './workout-provider';
+import { useGymHistory } from './use-gym-history';
 import { realHistory, formatSet } from '@/analytics/gym';
 import { PageHeading } from './assessment';
 export function WorkoutDetail({ id }: { id: string }) {
-  const { store, ready, save } = useWorkout();
+  const { store, ready, save } = useGymHistory({ scope: 'workout', id });
   const [remove, setRemove] = useState(false);
   const router = useRouter();
   if (!ready) return <p>Loading workout…</p>;
@@ -93,10 +93,13 @@ export function WorkoutDetail({ id }: { id: string }) {
               className="secondary danger"
               onClick={() => {
                 if (
-                  save({
-                    ...store,
-                    history: store.history.filter((s) => s.id !== id),
-                  })
+                  save(
+                    {
+                      ...store,
+                      history: store.history.filter((s) => s.id !== id),
+                    },
+                    store,
+                  )
                 )
                   router.push('/gym');
               }}

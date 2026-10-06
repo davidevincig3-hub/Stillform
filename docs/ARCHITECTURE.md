@@ -235,3 +235,5 @@ retain canonical history, acknowledge processed jobs, and retain failures for re
 manual queued-job processing is wired currently; a deployed durable worker is future work.
 Registry JSON and raw revisions are per-owner blobs initially; larger-history indexing,
 field-precedence configuration, deletion/export controls and key rotation remain extensions.
+
+Account Gym uses bounded server views and lightweight metadata/active drafts in localStorage. IndexedDB retains only unsynced operations, with revision CAS and immutable receipt retries. Historical pages, previous exposures, exports and Hevy previews load on demand; unloaded history is preserved by entity deltas. See [quota-safe account persistence](GYM_CLOUD.md#bounded-reads-and-quota-behavior).

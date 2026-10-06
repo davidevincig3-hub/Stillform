@@ -3,7 +3,9 @@
 ## Authority and schema
 
 After explicit account loading/bootstrap, Supabase is durable authority; browser storage
-is an owner-specific cache and pending-write queue. Existing `adaptive-coach.gym.v2`
+keeps lightweight owner/revision metadata and an active workout draft. IndexedDB stores
+only unsynced operations; clean historical accounts are not persisted in the browser.
+Existing `adaptive-coach.gym.v2`
 (version 2, schemaRevision 3) remains untouched as a desktop backup. Before account
 activation, existing local Gym behavior and V1 review/migration gates remain available.
 
@@ -58,8 +60,11 @@ There is no account-switch draft transfer; sign in to the cached draft's origina
 
 ## Saves, conflicts and temporary loss of Wi-Fi
 
-Existing pure Gym commands and Hevy plans operate on the shared store. `save` first
-validates and writes a local owner-keyed draft synchronously, then enqueues a cloud save.
+Existing pure Gym commands operate on a loaded server view. Unloaded history is never
+interpreted as deleted. Hevy explicitly loads full history into temporary memory for review.
+`save` validates changes, retains the small active draft in localStorage, and journals
+changed entities asynchronously in IndexedDB before sending a cloud save. Journal failure
+blocks transmission; do not close the app until pending storage succeeds.
 Each request has expected revision and stable operation UUID; additional edits while a
 request is in flight become a subsequent revision. The server serializes account writes,
 checks the receipt before CAS, and atomically replaces normalized rows with the validated
@@ -68,13 +73,14 @@ commands. This conservative whole-account CAS is simple but costs more than enti
 
 Synced/pending/error/conflict is visible, including inside active workout mode. Pending
 writes survive reload and are retried on account check, focus, online and every 15 seconds.
-Read-only refresh pulls shared history when there is no pending draft. There is no realtime
+Read-only refresh pulls the recent server view when there is no pending draft. There is no realtime
 collaboration. Conflicts freeze edits rather than overwrite newer data. Explicit reload
-first retains the rejected draft under a separate local recovery-backup key, then loads
+first retains the rejected pending operation/changes in an IndexedDB recovery entry, then loads
 cloud state. Export the visible draft before resolving if a portable copy is needed.
 
-Owner-keyed cache: `stillform.gym.account.<owner UUID>`; selected account pointer:
-`stillform.gym.account`. Cache envelope version is 1; invalid/unknown versions block
+Lightweight metadata/active draft: `stillform.gym.account.<owner UUID>`; selected account pointer:
+`stillform.gym.account`. Metadata envelope version is 2; version-1 caches are decoded
+compatibly, with unsynced legacy bytes preserved in IndexedDB before replacement. Unknown versions block
 editing and preserve original bytes. Pending writes are never flushed to a different authenticated
 owner. Authentication/network failure retains the draft. Clearing browser data while
 unsynced can still lose pending edits; storage quota failure blocks acceptance of a save.
@@ -114,3 +120,11 @@ union. HTTPS certificate trust requires explicit setup on each phone.
 The isolated Playwright server explicitly blanks account/provider credentials rather than
 inheriting `.env.local`; synthetic routed responses cover configured UI flows. PostgreSQL
 migration tests use PGlite only as a dev dependency. They do not contact live Supabase.
+
+## Bounded reads and quota behavior
+
+The workspace returns library/routines/preferences, three latest workouts and compact server-derived shortlist, exercise-usage and weekly summaries. History returns 20 workouts per page (maximum 100), with title/search/date filters. Exercise exposure pages and workout details load separately; previous performance fetches four real exposures by ID. Responses live only in memory. Phones do not need a full historical clone.
+
+Exports and Hevy preview explicitly request full history into temporary memory, never a clean cache. Recovery evidence loads a separate 90-day window. Integration matching also requests history explicitly. IndexedDB database stillform-gym-pending (version 1), journal object store, retains immutable unsynced operation IDs/revisions plus subsequent changed entities. Bootstrap is the sole full-dataset pending operation, written asynchronously once and removed after acknowledgement. No quota increase, storage deletion or offline framework is introduced. The independent desktop adaptive-coach.gym.v2 backup stays untouched.
+
+Scaling limitation: the server still reconstructs normalized account data through 0006 RPCs before selecting bounded responses or merging changed entities. Browser transport/storage is bounded; SQL-side pagination and incremental writes remain future optimizations. Full exports/Hevy review remain memory-intensive. IndexedDB or active-draft storage can still fail on a full device; failures block transmission and surface a retryable error.

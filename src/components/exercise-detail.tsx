@@ -1,11 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useWorkout } from './workout-provider';
+import { useGymHistory } from './use-gym-history';
 import { exerciseExposures, effortKnown, formatSet } from '@/analytics/gym';
 import { PageHeading } from './assessment';
 export function ExerciseDetail({ id }: { id: string }) {
-  const { store, ready } = useWorkout();
+  const [page, setPage] = useState(0);
+  const { store, ready, total, cloud } = useGymHistory({
+    scope: 'exercise',
+    id,
+    page,
+  });
   const [limit, setLimit] = useState(20);
   if (!ready) return <p>Loading exercise…</p>;
   const exercise = store.exercises.find((e) => e.id === id);
@@ -63,9 +68,21 @@ export function ExerciseDetail({ id }: { id: string }) {
           </section>
         ))
       )}
-      {exposures.length > limit && (
-        <button className="secondary" onClick={() => setLimit((n) => n + 20)}>
+      {(cloud.cache
+        ? (page + 1) * 20 < (total ?? 0)
+        : exposures.length > limit) && (
+        <button
+          className="secondary"
+          onClick={() =>
+            cloud.cache ? setPage((n) => n + 1) : setLimit((n) => n + 20)
+          }
+        >
           More exposures
+        </button>
+      )}
+      {cloud.cache && page > 0 && (
+        <button onClick={() => setPage((n) => n - 1)}>
+          Previous exposures
         </button>
       )}
       <p className="footer-note">

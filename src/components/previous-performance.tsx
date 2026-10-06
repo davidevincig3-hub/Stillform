@@ -1,8 +1,18 @@
 'use client';
 import { exerciseExposures, effortKnown, formatSet } from '@/analytics/gym';
-import { useWorkout } from './workout-provider';
+import { useGymHistory } from './use-gym-history';
 export function PreviousPerformance({ exerciseId }: { exerciseId: string }) {
-  const { store } = useWorkout();
+  const { store, ready, historyError } = useGymHistory({
+    scope: 'exercise',
+    id: exerciseId,
+    limit: 4,
+  });
+  if (!ready)
+    return (
+      <p className="previous-empty">
+        {historyError || 'Loading previous performance…'}
+      </p>
+    );
   const exposures = exerciseExposures(store.history, exerciseId);
   if (!exposures.length)
     return <p className="previous-empty">No previous real exposure yet.</p>;

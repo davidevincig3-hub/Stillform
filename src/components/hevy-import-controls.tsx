@@ -15,7 +15,17 @@ import {
   type HevyPlan,
 } from '@/integrations/hevy-import';
 export function HevyImportControls() {
-  const { store, ready, error, save } = useWorkout();
+  const {
+    store: visibleStore,
+    ready,
+    error,
+    save: saveVisible,
+    cloud,
+    cloudClient,
+  } = useWorkout();
+  const [fullStore, setFullStore] = useState<typeof visibleStore | null>(null);
+  const store = fullStore ?? visibleStore;
+  const save = (next: typeof store) => saveVisible(next, store);
   const [parsed, setParsed] = useState<HevyParsed | null>(null),
     [mappings, setMappings] = useState<ExerciseMapping[]>([]),
     [decisions, setDecisions] = useState<Record<string, DuplicateDecision>>({}),
@@ -111,12 +121,16 @@ export function HevyImportControls() {
           }
           setBusy(true);
           try {
+            const importStore = cloud.cache
+              ? (await cloudClient.read({ scope: 'all' })).store!
+              : visibleStore;
+            setFullStore(importStore);
             const preview = await previewHevyImport(
               await file.text(),
               timeZone,
             );
             setParsed(preview);
-            setMappings(initialMappings(preview, store));
+            setMappings(initialMappings(preview, importStore));
           } catch {
             setMessage('File could not be parsed. Nothing imported.');
           } finally {

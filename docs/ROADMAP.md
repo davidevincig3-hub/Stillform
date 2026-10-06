@@ -106,3 +106,5 @@ and inspect real HR/GPS/laps missingness without enabling physiological decision
 operational webhook worker/retry observability, canonical export/deletion and field-precedence
 policy, with explicit Gym reconciliation/cloud migration designed separately. Existing JSON
 merge/preview, multi-tab coordination and Gym metadata review remain valuable later tasks.
+
+Account Gym follow-up: move bounded history selection and changed-entity writes into SQL to reduce server reconstruction cost; browser history now uses paged reads and no clean full account cache.

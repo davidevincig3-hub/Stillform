@@ -512,3 +512,5 @@ without returned records is not a measured anomaly or proof of an API retention 
 Recommended next milestone: collect valid overnight observations prospectively, monitor
 baseline coverage and evaluate/calibrate the clearly labelled statistical heuristics before
 letting recovery evidence influence user-approved training proposals.
+
+Account Gym history is server-authoritative with paged reads. Browser persistence contains lightweight metadata/active drafts and an IndexedDB pending journal. See [account Gym quota behavior](docs/GYM_CLOUD.md#bounded-reads-and-quota-behavior).

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import type { RecoveryData } from '@/analytics/polar-recovery';
-import { useWorkout } from './workout-provider';
+import { useGymHistory } from './use-gym-history';
 import { assessRecovery } from '@/analytics/recovery-engine';
 import { withLocalGymEvidence } from '@/analytics/recovery-gym';
 
@@ -24,7 +24,12 @@ async function readRecovery() {
   );
 }
 export function useRecoveryData() {
-  const { store, ready, error: storageError } = useWorkout();
+  const {
+    store,
+    ready,
+    error: storageError,
+    historyError,
+  } = useGymHistory({ scope: 'evidence' });
   const [data, setData] = useState<RecoveryData | null>(null),
     [mode, setMode] = useState<'real' | 'sample' | 'unavailable'>(
       'unavailable',
@@ -58,7 +63,7 @@ export function useRecoveryData() {
   }
   const combined = useMemo(
     () =>
-      data?.engineInput && ready && !storageError
+      data?.engineInput && ready && !storageError && !historyError
         ? {
             ...data,
             engine: assessRecovery(
@@ -66,7 +71,7 @@ export function useRecoveryData() {
             ),
           }
         : data,
-    [data, ready, store.history, storageError],
+    [data, ready, store.history, storageError, historyError],
   );
   return { data: combined, mode, checking, error, refresh };
 }

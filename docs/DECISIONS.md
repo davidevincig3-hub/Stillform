@@ -349,3 +349,7 @@ canonical/device values rather than erasing enrichment; raw revisions preserve t
 snapshot. Current source syncedAt still updates on identical sync. Explicit null optional
 measurements remain missing, not fabricated zero values. More granular per-field observation
 timestamps and provider removal semantics belong in the future precedence policy.
+
+## 2026-10-06 — Quota-safe account Gym
+
+Replace duplicated full localStorage draft/pending snapshots with version-2 owner/revision/active metadata and an IndexedDB unsynced journal. Bootstrap does not require a synchronous full account cache. Supabase remains durable authority; ID-based deltas preserve unloaded history. Keep existing atomic SQL revision/receipt semantics and the independent desktop backup. Server RPC reconstruction remains a documented scaling limitation; no offline framework or new dependency.

@@ -4,16 +4,24 @@ import { useState } from 'react';
 import { useWorkout } from './workout-provider';
 import { findExerciseHistory } from '@/analytics/gym-history';
 export function ExerciseHistorySearch({ full = false }: { full?: boolean }) {
-  const { store } = useWorkout();
+  const { store, cloud } = useWorkout();
   const [query, setQuery] = useState(''),
     [sort, setSort] = useState<'recent' | 'name' | 'frequency'>('recent'),
     [page, setPage] = useState(0);
-  const results = findExerciseHistory(
-      store.exercises,
-      store.history,
-      query,
-      sort,
-    ),
+  const results = cloud.snapshot?.summary
+      ? cloud.snapshot.summary.exerciseHistory
+          .filter((e) =>
+            e.name.toLowerCase().includes(query.trim().toLowerCase()),
+          )
+          .toSorted((a, b) =>
+            sort === 'name'
+              ? a.name.localeCompare(b.name)
+              : sort === 'frequency'
+                ? b.setCount - a.setCount
+                : b.lastDate.localeCompare(a.lastDate) ||
+                  a.name.localeCompare(b.name),
+          )
+      : findExerciseHistory(store.exercises, store.history, query, sort),
     size = full ? 20 : query ? 8 : 3,
     actualPage = Math.min(
       page,

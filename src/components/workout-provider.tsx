@@ -28,11 +28,12 @@ import {
   gymAccountKey,
   type CloudState,
 } from '@/repositories/gym-cloud-client';
+import { browserGymJournal } from '@/repositories/gym-cloud-journal';
 interface WorkoutContext {
   store: GymStore;
   ready: boolean;
   error: string;
-  save: (store: GymStore) => boolean;
+  save: (store: GymStore, previous?: GymStore) => boolean;
   localStore: GymStore;
   localError: string;
   cloud: CloudState;
@@ -47,11 +48,15 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [writeError, setWriteError] = useState('');
   const [cloudClient] = useState(
     () =>
-      new GymCloudClient(gymCloudTransport, {
-        getItem: (key) =>
-          typeof window === 'undefined' ? null : localStorage.getItem(key),
-        setItem: (key, value) => localStorage.setItem(key, value),
-      }),
+      new GymCloudClient(
+        gymCloudTransport,
+        {
+          getItem: (key) =>
+            typeof window === 'undefined' ? null : localStorage.getItem(key),
+          setItem: (key, value) => localStorage.setItem(key, value),
+        },
+        browserGymJournal,
+      ),
   );
   const cloud = useSyncExternalStore(
     cloudClient.subscribe,
@@ -84,9 +89,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       };
     }
   }, [raw, legacy]);
-  function save(next: GymStore) {
+  function save(next: GymStore, previous?: GymStore) {
     try {
-      if (cloud.cache) return cloudClient.edit(next, cloud.cache.draft);
+      if (cloud.cache)
+        return cloudClient.edit(next, previous ?? cloud.cache.draft);
       if (localStorage.getItem(gymAccountKey))
         throw new Error('Account draft must be recovered before saving');
       if (restored.error) throw new Error(restored.error);

@@ -296,3 +296,5 @@ SQL 0004 adds owner-keyed integration_registry (versioned JSON state), integrati
 serialize mutations. Tables use RLS with no browser-access policies/grants. Application routes
 resolve authenticated owners; the SQL draft requires actual deployment verification. No Gym
 key/version/schema or JSON backup format is changed, and no existing data is moved/deleted.
+
+Account Gym uses bounded server views and lightweight metadata/active drafts in localStorage. IndexedDB retains only unsynced operations, with revision CAS and immutable receipt retries. Historical pages, previous exposures, exports and Hevy previews load on demand; unloaded history is preserved by entity deltas. See [quota-safe account persistence](GYM_CLOUD.md#bounded-reads-and-quota-behavior).

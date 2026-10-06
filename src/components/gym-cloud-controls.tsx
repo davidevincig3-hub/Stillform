@@ -98,6 +98,13 @@ export function GymCloudControls() {
         {counts && (
           <div aria-label="Gym migration preview">
             <p>
+              Desktop backup{' '}
+              {preview?.base === JSON.stringify(localStore)
+                ? 'unchanged since preview'
+                : 'changed; review required'}
+              .
+            </p>
+            <p>
               Local validation passed. No duplicate IDs or source fingerprints.
               No data will be uploaded by this preview.
             </p>
