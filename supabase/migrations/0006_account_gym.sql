@@ -1,5 +1,6 @@
 -- Account Gym V1. Domain IDs are text: built-in IDs and hevy-<fingerprint> are preserved.
 -- Entity JSON contains only that entity's scalar fields/snapshot; children live in separate tables.
+-- Logical document key "sets" maps to gym_workout_sets; legacy gym_sets is never touched.
 create table public.gym_accounts (
  owner_id uuid primary key references auth.users(id) on delete cascade,
  revision bigint not null default 0 check(revision >= 0),
@@ -16,13 +17,13 @@ do $ddl$
 declare entity text;
 begin
  foreach entity in array array['exercises','routines','routine_exercises','workouts','workout_exercises','sets','preferences','mappings','batches'] loop
-  execute format('create table public.gym_%I (owner_id uuid not null references public.gym_accounts(owner_id) on delete cascade, id text not null, parent text, position integer not null check(position >= 0), data jsonb not null check(jsonb_typeof(data) = ''object''), primary key(owner_id,id))',entity);
+  execute format('create table public.%I (owner_id uuid not null references public.gym_accounts(owner_id) on delete cascade, id text not null, parent text, position integer not null check(position >= 0), data jsonb not null check(jsonb_typeof(data) = ''object''), primary key(owner_id,id))',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end);
  end loop;
 end $ddl$;
 -- Relationships include owner_id; no cross-account child references.
 alter table public.gym_routine_exercises add foreign key(owner_id,parent) references public.gym_routines(owner_id,id) on delete cascade;
 alter table public.gym_workout_exercises add foreign key(owner_id,parent) references public.gym_workouts(owner_id,id) on delete cascade;
-alter table public.gym_sets add foreign key(owner_id,parent) references public.gym_workout_exercises(owner_id,id) on delete cascade;
+alter table public.gym_workout_sets add foreign key(owner_id,parent) references public.gym_workout_exercises(owner_id,id) on delete cascade;
 alter table public.gym_preferences add foreign key(owner_id,id) references public.gym_exercises(owner_id,id) on delete cascade;
 create unique index gym_one_active on public.gym_workouts(owner_id) where data->>'bucket'='active';
 create unique index gym_source_fingerprint on public.gym_workouts(owner_id,(data->'provenance'->>'fingerprint')) where data->>'bucket'='history' and data->'provenance'->>'fingerprint' is not null;
@@ -30,11 +31,11 @@ do $rls$
 declare entity text;
 begin
  foreach entity in array array['accounts','operations','exercises','routines','routine_exercises','workouts','workout_exercises','sets','preferences','mappings','batches'] loop
-  execute format('alter table public.gym_%I enable row level security',entity);
-  execute format('create policy owner_read on public.gym_%I for select to authenticated using (owner_id = (select auth.uid()))',entity);
-  execute format('revoke all on public.gym_%I from anon, authenticated',entity);
-  execute format('grant select on public.gym_%I to authenticated',entity);
-  execute format('grant all on public.gym_%I to service_role',entity);
+  execute format('alter table public.%I enable row level security',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end);
+  execute format('create policy owner_read on public.%I for select to authenticated using (owner_id = (select auth.uid()))',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end);
+  execute format('revoke all on public.%I from anon, authenticated',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end);
+  execute format('grant select on public.%I to authenticated',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end);
+  execute format('grant all on public.%I to service_role',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end);
  end loop;
 end $rls$;
 create function public.read_account_gym(p_owner uuid) returns jsonb
@@ -44,7 +45,7 @@ begin
  perform pg_catalog.pg_advisory_xact_lock_shared(pg_catalog.hashtextextended(p_owner::text,0));
  select revision into rev from public.gym_accounts where owner_id=p_owner;
  foreach entity in array array['exercises','routines','routine_exercises','workouts','workout_exercises','sets','preferences','mappings','batches'] loop
-  execute format('select coalesce(jsonb_agg(jsonb_build_object(''id'',id,''parent'',parent,''position'',position,''data'',data) order by position,id),''[]''::jsonb) from public.gym_%I where owner_id=$1',entity) into rows using p_owner;
+  execute format('select coalesce(jsonb_agg(jsonb_build_object(''id'',id,''parent'',parent,''position'',position,''data'',data) order by position,id),''[]''::jsonb) from public.%I where owner_id=$1',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end) into rows using p_owner;
   result := result || jsonb_build_object(entity,rows);
  end loop;
  return jsonb_build_object('revision',coalesce(rev,0),'initialized',rev is not null,'document',jsonb_build_object('formatVersion',1,'tables',result));
@@ -70,10 +71,10 @@ begin
  -- Replace entity rows atomically under CAS, retaining all domain IDs and snapshots.
  -- A failed constraint rolls the entire transaction back; no partial historical imports.
  foreach entity in array array['sets','workout_exercises','routine_exercises','preferences','mappings','batches','workouts','routines','exercises'] loop
-  execute format('delete from public.gym_%I where owner_id=$1',entity) using p_owner;
+  execute format('delete from public.%I where owner_id=$1',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end) using p_owner;
  end loop;
  foreach entity in array array['exercises','routines','routine_exercises','workouts','workout_exercises','sets','preferences','mappings','batches'] loop
-  execute format('insert into public.gym_%I(owner_id,id,parent,position,data) select $1,x.id,x.parent,x.position,x.data from jsonb_to_recordset($2) x(id text,parent text,position integer,data jsonb)',entity) using p_owner,p_document->'tables'->entity;
+  execute format('insert into public.%I(owner_id,id,parent,position,data) select $1,x.id,x.parent,x.position,x.data from jsonb_to_recordset($2) x(id text,parent text,position integer,data jsonb)',case when entity='sets' then 'gym_workout_sets' else 'gym_'||entity end) using p_owner,p_document->'tables'->entity;
  end loop;
  insert into public.gym_operations(owner_id,operation_id,digest,revision) values(p_owner,p_operation,p_digest,rev);
  return jsonb_build_object('ok',true,'revision',rev,'replayed',false);

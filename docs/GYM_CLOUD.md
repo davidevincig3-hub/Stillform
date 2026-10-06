@@ -11,11 +11,15 @@ Apply `supabase/migrations/0006_account_gym.sql` after reviewing it. It creates:
 
 - `gym_accounts`: authenticated owner UUID and monotonically increasing revision;
 - `gym_exercises`, `gym_routines`, `gym_routine_exercises`;
-- `gym_workouts`, `gym_workout_exercises`, `gym_sets`;
+- `gym_workouts`, `gym_workout_exercises`, `gym_workout_sets`;
 - `gym_preferences`, `gym_mappings`, `gym_batches`;
 - `gym_operations`: immutable operation UUID, SHA-256 request digest and accepted revision.
 
 Text domain IDs preserve built-in names, custom UUIDs and `hevy-<fingerprint>` IDs.
+The codec/RPC document keeps its logical `sets` key; SQL maps it exclusively to
+`gym_workout_sets`. Foundation `gym_sets` remains unchanged and is never read,
+altered or deleted by account-Gym RPCs. Migration tests apply 0001–0005 first and
+verify that a populated legacy table, its schema, policies and constraints survive 0006.
 Children have separate rows, owner/parent keys and order. Entity JSONB holds that entity's
 scalar fields, provenance and snapshots, not the whole Gym store or nested set collections.
 Routine snapshots intentionally preserve the routine at workout start. Composite storage
