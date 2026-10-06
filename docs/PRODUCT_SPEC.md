@@ -1,5 +1,14 @@
 # Product specification
 
+## Account Gym milestone
+
+After explicit reviewed bootstrap/account loading, authenticated Gym history, routines,
+library, pins, shortlist and active workout use shared server authority. Local desktop
+backup remains intact; pending drafts survive transient network failures; stale saves
+require explicit reload. No silent merge, upload or last-write-wins. This supersedes
+earlier per-browser authority statements once account mode is enabled. Live migration
+remains approval-gated. See [account Gym](GYM_CLOUD.md).
+
 ## Daily Gym usability
 
 Gym prioritizes Start/Resume, saved routines, recent/frequent exercises, three latest

@@ -26,7 +26,7 @@ const links = [
 ];
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const { store, error } = useWorkout();
+  const { store, error, cloud } = useWorkout();
   const dark = useBrowserValue('theme') === 'dark';
   const [coach, setCoach] = useState(false);
   const [full, setFull] = useState(false);
@@ -69,7 +69,9 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="row">
           <span className="sample-badge">
             {path.startsWith('/gym')
-              ? 'GYM · REAL LOCAL DATA'
+              ? cloud.cache
+                ? 'GYM · REAL ACCOUNT DATA'
+                : 'GYM · REAL LOCAL DATA'
               : path.startsWith('/activities') || path === '/integrations'
                 ? 'REAL ACTIVITY REGISTRY'
                 : path === '/'

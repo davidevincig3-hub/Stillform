@@ -1,5 +1,12 @@
 # Stillform — Adaptive Training Coach
 
+## Account Gym persistence
+
+Account-bound normalized Supabase storage, revision checks, durable local drafts and
+reviewed bootstrap are implemented. Live bootstrap requires approval and migration 0006;
+no existing desktop history is uploaded automatically. See [account Gym](docs/GYM_CLOUD.md)
+and [trusted HTTPS phone setup](docs/MOBILE_GYM.md).
+
 Mobile-first training and recovery application. **Gym logs and descriptive analytics
 use real local data; Polar v4 can provide real training and Recovery source history after secure setup. Strava remains supported but dormant.** No account, external
 service or credentials required for local Gym and sample dashboards.

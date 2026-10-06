@@ -10,6 +10,7 @@ import { RecentExercises } from './recent-exercises';
 import { ExerciseHistorySearch } from './exercise-history-search';
 import { GymAnalytics } from './gym-analytics';
 import { GymExportControls } from './gym-export-controls';
+import { GymCloudControls } from './gym-cloud-controls';
 import { routineTemplates } from '@/domain/gym';
 import {
   saveRoutine,
@@ -40,8 +41,9 @@ export function GymDashboard() {
     <>
       <PageHeading
         title="Train. Log. Learn."
-        subtitle="Your real workouts, saved locally. No sample performance in your personal history."
+        subtitle="Your real workouts. No sample performance in your personal history."
       />
+      <GymCloudControls />
       <div className="start-workout">
         {store.active ? (
           <Link className="primary" href="/gym/workout">

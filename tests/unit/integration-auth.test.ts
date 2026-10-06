@@ -108,3 +108,37 @@ it('refreshes Supabase app session with server validation and rejects cross-orig
     ),
   ).not.toThrow();
 });
+it('uses a separate secure Gym cookie without replacing the integration session', async () => {
+  const secure = { ...config, origin: 'https://192.168.1.103:3000' };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      json({
+        access_token: 'synthetic-gym-access',
+        refresh_token: 'synthetic-gym-refresh',
+        expires_in: 3600,
+        user: { id: owner },
+      }),
+    ),
+  );
+  await loginSession(
+    { email: 'synthetic@example.test', password: 'synthetic-only' },
+    secure,
+    'stillform-gym-session',
+  );
+  expect(jar.set).toHaveBeenCalledWith(
+    'stillform-gym-session',
+    expect.any(String),
+    expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'lax' }),
+  );
+  expect(jar.set.mock.calls.every((call) => call[0] !== SESSION_COOKIE)).toBe(
+    true,
+  );
+  jar.get.mockReturnValue({ value: jar.set.mock.calls[0][1] });
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => json({ id: owner })),
+  );
+  expect(await requireOwner(secure, 'stillform-gym-session')).toBe(owner);
+  expect(jar.get).toHaveBeenCalledWith('stillform-gym-session');
+});

@@ -1,5 +1,13 @@
 # Roadmap
 
+## Account Gym adoption gate
+
+Implemented: normalized owner persistence, reviewed idempotent desktop bootstrap, local
+pending drafts, stale revision conflicts and cross-device polling/resume. Next: review
+and deploy migration 0006, approve real desktop bootstrap, verify counts/IDs and trusted
+HTTPS phone access with the same account. Then reduce snapshot write cost with entity
+diffs if needed before Gym Analytics V1 expansion. No live upload occurs automatically.
+
 Daily Gym blockers addressed: explicit trusted-LAN dev mode, reviewed JSON bootstrap
 into an empty phone browser, real-history recent/frequent exercise shortlist with
 pin/dismiss controls, and synthetic verification of incremental Hevy export replay.

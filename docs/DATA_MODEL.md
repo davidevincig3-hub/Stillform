@@ -1,5 +1,15 @@
 # Data model
 
+## Account Gym V1
+
+Migration 0006 stores entity rows with owner UUID, preserved text ID, parent/order and
+entity scalar JSONB; workout children/sets occupy separate tables. Accounts carry revision;
+operation receipts carry UUID/digest/revision. Owner/parent FKs and one-active/fingerprint
+uniqueness protect identity. Local schema v2 revision 3 and backup formatVersion 1 remain
+unchanged. Account caches retain pending immutable CAS writes and rejected-draft backups.
+Unassigned metadata/provenance/legacy review gates survive normalization. See [schema and
+lifecycle](GYM_CLOUD.md).
+
 ## Gym daily-use extension
 
 Gym storage remains `adaptive-coach.gym.v2`, version 2, now schemaRevision 3.

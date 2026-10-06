@@ -1,5 +1,17 @@
 # Decision log
 
+## 2026-10-06 — Account Gym cloud persistence
+
+Preserve existing domain IDs and snapshots using dedicated text-key normalized owner
+tables rather than retrofit dormant UUID Gym tables. RLS protects reads; service-only
+RPCs authorize writes through verified server sessions. Coarse account CAS and immutable
+operation receipts favor safety and simple retries over realtime collaboration. Retain
+original local history untouched, owner-key pending drafts and rejected-conflict backups.
+Never silently bootstrap/merge; nonempty accounts block initial upload. LAN HTTP remains
+local-only; cloud credentials require trusted HTTPS outside loopback. Gym uses a separate
+HttpOnly session cookie so HTTPS sign-in does not replace integration credentials.
+See [account Gym](GYM_CLOUD.md) for tradeoffs and approval-gated live deployment.
+
 ## 2026-10-06 — LAN Gym access, recent exercises and incremental continuity
 
 Expose development only through an explicit LAN launcher; default dev binds loopback.

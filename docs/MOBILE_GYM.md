@@ -114,3 +114,52 @@ Automatic historical editing/set merging is not supported because the CSV has no
 workout ID. No deletion or reimport of the existing 287 sessions is required. If you
 continue logging Hevy, keep importing on the authoritative browser; do not assume two
 independent local stores reconcile automatically.
+
+## Shared account Gym on the phone: trusted HTTPS
+
+HTTP LAN still supports the existing browser-local workflow. Cloud sign-in/saves reject
+HTTP outside loopback; do not send account passwords over it. After approved desktop
+bootstrap and schema installation, use an explicitly trusted local TLS certificate that
+covers `localhost`, `127.0.0.1` and the current private IP. Next's documented development
+HTTPS supports user-supplied certificate/key files. Create certificates with a reputable
+local development CA such as mkcert and install its root certificate on your phone
+explicitly. Do not bypass browser certificate warnings or share the CA private key.
+Certificate trust/network/firewall changes are never made by the application.
+
+Keep certificate/key files in ignored `certificates/`. After stopping HTTP dev:
+
+```powershell
+pnpm lan:url --https --host 192.168.1.103
+pnpm dev:lan --https --host 192.168.1.103 --experimental-https-key ./certificates/stillform-key.pem --experimental-https-cert ./certificates/stillform.pem
+```
+
+Open the printed `https://<private-ip>:3000/gym`, with no browser security warning.
+Gym > Account Gym > sign in to the same existing Stillform account, then Check / reload
+account. Do not bootstrap a separate empty phone dataset over existing cloud history.
+The same HTTPS dev instance serves `https://localhost:3000`; its browser-local store is
+separate from HTTP localhost, so perform initial migration from the original HTTP origin
+first. Return to `pnpm dev` for unchanged HTTP localhost integrations/OAuth. HTTPS Gym
+sign-in uses a separate secure HttpOnly session and does not replace Polar credentials.
+
+The plain `--https` flag also enables Next's certificate generation, which may prompt
+for local certificate-tool/trust installation; use supplied certificates for predictable
+phone/IP coverage. No HTTPS setup was applied automatically. Private-network-only
+firewall guidance above still applies. If IP changes, regenerate the IP certificate and
+restart the launcher with the new address. Cloud authority eliminates repeated JSON copies;
+previous empty-browser JSON bootstrap below remains a local-only fallback, not account sync.
+
+For certificate creation, install mkcert using its [official Windows instructions](https://github.com/FiloSottile/mkcert#installation), then run these commands yourself
+(the first deliberately installs your development CA into the desktop trust store):
+
+```powershell
+mkcert -install
+New-Item -ItemType Directory -Force ./certificates
+mkcert -key-file ./certificates/stillform-key.pem -cert-file ./certificates/stillform.pem localhost 127.0.0.1 192.168.1.103
+mkcert -CAROOT
+```
+
+Substitute the current IP printed by `pnpm lan:url`. Transfer only `rootCA.pem` from
+the printed CA folder to your phone and explicitly install/trust it using the phone's
+certificate settings. On iOS, install the profile and enable full trust in Certificate
+Trust Settings. Never transfer `rootCA-key.pem`. See [mkcert's mobile guidance](https://github.com/FiloSottile/mkcert#mobile-devices).
+No CA, certificate, browser trust exception or firewall change has been applied by this task.

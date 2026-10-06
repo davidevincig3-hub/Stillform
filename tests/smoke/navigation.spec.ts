@@ -60,7 +60,11 @@ test('labels, chart context, goals, coach and dark theme', async ({ page }) => {
       page.getByText(
         path.startsWith('/gym')
           ? 'GYM · REAL LOCAL DATA'
-          : 'DEMO · SAMPLE DATA',
+          : path === '/'
+            ? 'HOME · SEE DATA LABELS'
+            : path === '/recovery'
+              ? 'RECOVERY · SEE DATA LABELS'
+              : 'DEMO · SAMPLE DATA',
         { exact: true },
       ),
     ).toBeVisible();

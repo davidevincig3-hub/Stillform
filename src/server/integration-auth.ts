@@ -52,7 +52,11 @@ async function authRequest(c: IntegrationConfig, path: string, body: unknown) {
     })
     .parse(await r.json());
 }
-export async function loginSession(input: unknown, c: IntegrationConfig) {
+export async function loginSession(
+  input: unknown,
+  c: IntegrationConfig,
+  cookieName = SESSION_COOKIE,
+) {
   const data = z
     .object({
       email: z.string().optional(),
@@ -81,14 +85,17 @@ export async function loginSession(input: unknown, c: IntegrationConfig) {
     };
   }
   (await cookies()).set(
-    SESSION_COOKIE,
+    cookieName,
     seal(session, c.encryptionKey),
     cookieOptions(c, 21600),
   );
   return session.owner;
 }
-export async function requireOwner(c: IntegrationConfig) {
-  const cookie = (await cookies()).get(SESSION_COOKIE)?.value;
+export async function requireOwner(
+  c: IntegrationConfig,
+  cookieName = SESSION_COOKIE,
+) {
+  const cookie = (await cookies()).get(cookieName)?.value;
   if (!cookie) throw new AuthError();
   let session: z.infer<typeof authSession>;
   try {
@@ -113,7 +120,7 @@ export async function requireOwner(c: IntegrationConfig) {
       expires: Date.now() + r.expires_in * 1000,
     };
     (await cookies()).set(
-      SESSION_COOKIE,
+      cookieName,
       seal(session, c.encryptionKey),
       cookieOptions(c, 21600),
     );

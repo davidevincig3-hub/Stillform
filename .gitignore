@@ -10,3 +10,4 @@ test-results/
 playwright-report/
 local-imports/
 .integration-dev/
+certificates/

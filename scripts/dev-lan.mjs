@@ -1,16 +1,10 @@
 import { networkInterfaces } from 'node:os';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { isIP } from 'node:net';
 import { pathToFileURL } from 'node:url';
 
-export function isPrivateIPv4(address) {
-  if (isIP(address) !== 4) return false;
-  const [a, b] = address.split('.').map(Number);
-  return (
-    a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
-  );
-}
+import { isPrivateIPv4 } from '../src/domain/lan-host.mjs';
+export { isPrivateIPv4 } from '../src/domain/lan-host.mjs';
 export function lanAddresses(interfaces) {
   return Object.entries(interfaces).flatMap(([name, entries]) =>
     (entries ?? [])
@@ -41,8 +35,10 @@ if (
 ) {
   try {
     const addresses = lanAddresses(networkInterfaces());
+    const https = process.argv.includes('--https');
+    const protocol = https ? 'https' : 'http';
     for (const e of addresses)
-      console.log(`${e.name}: http://${e.address}:3000/gym`);
+      console.log(`${e.name}: ${protocol}://${e.address}:3000/gym`);
     const index = process.argv.indexOf('--host');
     if (
       index >= 0 &&
@@ -54,7 +50,7 @@ if (
       index >= 0 ? process.argv[index + 1] : process.env.STILLFORM_LAN_HOST,
     );
     console.log(
-      `Phone: http://${host}:3000/gym\nDesktop: http://localhost:3000/gym\nPrivate trusted LAN only. Keep integrations/OAuth on localhost. Gym storage is per browser and origin.`,
+      `Phone: ${protocol}://${host}:3000/gym\nDesktop: ${protocol}://localhost:3000/gym\nPrivate trusted LAN only. Account Gym sign-in requires trusted HTTPS on the phone. Keep integrations/OAuth on their configured origin.`,
     );
     if (!process.argv.includes('--url-only')) {
       const require = createRequire(import.meta.url);
@@ -67,6 +63,24 @@ if (
           '0.0.0.0',
           '--port',
           '3000',
+          ...(https ? ['--experimental-https'] : []),
+          ...[
+            '--experimental-https-key',
+            '--experimental-https-cert',
+            '--experimental-https-ca',
+          ].flatMap((flag) => {
+            const at = process.argv.indexOf(flag);
+            if (at < 0) return [];
+            if (
+              !https ||
+              !process.argv[at + 1] ||
+              process.argv[at + 1].startsWith('--')
+            )
+              throw new Error(
+                `${flag} requires --https and a certificate path`,
+              );
+            return [flag, process.argv[at + 1]];
+          }),
         ],
         { stdio: 'inherit', env: { ...process.env, STILLFORM_LAN_HOST: host } },
       );

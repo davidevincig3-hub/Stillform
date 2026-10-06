@@ -47,7 +47,12 @@ Current Gym domain is `src/domain/gym.ts`; storage uses `adaptive-coach.gym.v2`
 (version 2, schemaRevision 3: ID-keyed pinned/dismissed preferences). Retain legacy V1 decoder and tests. Old unmarked records require review
 before entering personal history; discard all sample previous-performance strings.
 Desktop development binds localhost; `pnpm dev:lan` explicitly enables a trusted LAN.
-Gym storage is per browser/origin; JSON bootstrap is only for an empty store.
+Local Gym backup is per browser/origin; JSON bootstrap is only for an empty local store.
+Account Gym uses migration 0006 normalized owner tables, verified server auth, account CAS
+and idempotent operation receipts. Preserve owner-keyed pending/rejected drafts and the
+original desktop local key. Cloud bootstrap requires explicit approval and verified empty
+account; never silently upload or merge. Phone cloud authentication requires trusted HTTPS;
+HTTP LAN remains local-only. See docs/GYM_CLOUD.md. Test SQL with synthetic PGlite accounts.
 Real queries filter completed confirmed-user origin and use stable exercise IDs.
 Preserve routine/exercise snapshots, JSON formatVersion 1 and CSV export safety.
 Never fill insufficient personal data with seeds. Hevy uses verified parsing,

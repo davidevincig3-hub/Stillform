@@ -1,5 +1,15 @@
 # Architecture
 
+## Account Gym storage boundary
+
+Pure Gym commands still produce validated GymStore snapshots. gym-cloud-codec normalizes
+entity rows; gym-cloud-client owns owner-keyed cache, immutable pending operations and
+CAS conflicts; WorkoutProvider selects local backup or account draft. /api/gym validates
+Supabase session owner and trusted origin; SupabaseGymRepository uses service-only RPCs.
+Migration 0006 adds normalized owner tables, relationships, RLS, revision and receipts.
+One atomic account revision protects active work across devices. No provider credentials
+are returned. Local V1/V2 decoders and JSON export remain intact. See [details](GYM_CLOUD.md).
+
 Daily Gym use: `analytics/gym-shortlist.ts` computes exposure/set counts and recency-weighted
 ranking by stable exercise ID. Shared recent-exercise and searchable picker components
 serve Gym, routine editor and active workout. `exercisePreferences` are local schema
