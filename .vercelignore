@@ -1,0 +1,12 @@
+.git/
+.next/
+.env*
+local-imports/
+.integration-dev/
+certificates/
+test-results/
+playwright-report/
+node_modules/
+.pnpm-store/
+.vercel/
+*.tsbuildinfo

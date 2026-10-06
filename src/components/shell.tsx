@@ -68,17 +68,19 @@ export function Shell({ children }: { children: ReactNode }) {
         </Link>
         <div className="row">
           <span className="sample-badge">
-            {path.startsWith('/gym')
-              ? cloud.cache
-                ? 'GYM · REAL ACCOUNT DATA'
-                : 'GYM · REAL LOCAL DATA'
-              : path.startsWith('/activities') || path === '/integrations'
-                ? 'REAL ACTIVITY REGISTRY'
-                : path === '/'
-                  ? 'HOME · SEE DATA LABELS'
-                  : path === '/recovery'
-                    ? 'RECOVERY · SEE DATA LABELS'
-                    : 'DEMO · SAMPLE DATA'}
+            {path === '/login'
+              ? 'ACCOUNT SIGN-IN'
+              : path.startsWith('/gym')
+                ? cloud.cache
+                  ? 'GYM · REAL ACCOUNT DATA'
+                  : 'GYM · REAL LOCAL DATA'
+                : path.startsWith('/activities') || path === '/integrations'
+                  ? 'REAL ACTIVITY REGISTRY'
+                  : path === '/'
+                    ? 'HOME · SEE DATA LABELS'
+                    : path === '/recovery'
+                      ? 'RECOVERY · SEE DATA LABELS'
+                      : 'DEMO · SAMPLE DATA'}
           </span>
           <button
             className="icon-button"

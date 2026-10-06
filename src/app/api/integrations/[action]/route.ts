@@ -69,7 +69,7 @@ export async function GET(
   const { action } = await params;
   let config;
   try {
-    config = integrationConfig();
+    config = integrationConfig(undefined, request);
     const missing = missingConfiguration(config);
     if (action === 'status' && missing.length)
       return NextResponse.json(
@@ -101,13 +101,18 @@ export async function GET(
       );
     }
     if (action === 'connect') {
+      if (config.origin !== (config.callbackOrigin ?? config.origin))
+        throw new AuthError(
+          'Open Integrations on APP_ORIGIN to authorize Strava; existing connection reads and sync remain available here.',
+          400,
+        );
       const state = newOAuthState(owner, config.encryptionKey);
       await setState(state.cookie, config);
       const url = new URL(STRAVA_ENDPOINTS.authorize);
       url.search = new URLSearchParams({
         client_id: config.clientId,
         response_type: 'code',
-        redirect_uri: `${config.origin}/api/integrations/callback`,
+        redirect_uri: `${config.callbackOrigin ?? config.origin}/api/integrations/callback`,
         scope: REQUIRED_SCOPES.join(','),
         approval_prompt: 'force',
         state: state.nonce,
@@ -192,7 +197,7 @@ export async function POST(
   { params }: { params: Promise<{ action: string }> },
 ) {
   try {
-    const c = integrationConfig();
+    const c = integrationConfig(undefined, request);
     checkOrigin(request, c);
     const { action } = await params;
     if (

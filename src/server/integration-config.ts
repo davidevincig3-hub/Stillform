@@ -1,5 +1,10 @@
 import 'server-only';
 import {
+  configuredOrigins,
+  parseTrustedOrigin,
+  trustedRequestOrigin,
+} from './trusted-origins';
+import {
   DEFAULT_POLAR_TIME_ZONE,
   validatePolarTimeZone,
 } from '../domain/polar-training-range';
@@ -11,6 +16,9 @@ export const STRAVA_ENDPOINTS = {
 };
 export interface IntegrationConfig {
   origin: string;
+  callbackOrigin?: string;
+  trustedOrigins?: string[];
+  development?: boolean;
   mode: 'supabase' | 'dev-file';
   encryptionKey: string;
   clientId: string;
@@ -29,11 +37,14 @@ export interface IntegrationConfig {
 }
 export function integrationConfig(
   env: Record<string, string | undefined> = process.env,
+  request?: Request,
 ): IntegrationConfig {
   const apiBase = env.STRAVA_API_BASE_URL || STRAVA_ENDPOINTS.api;
   if (![STRAVA_ENDPOINTS.api, 'https://api-v3.strava.com'].includes(apiBase))
     throw new Error('Unsupported STRAVA_API_BASE_URL');
-  const origin = new URL(env.APP_ORIGIN || 'http://localhost:3000').origin;
+  const origin = parseTrustedOrigin(env.APP_ORIGIN || 'http://localhost:3000');
+  const trustedOrigins = configuredOrigins(env, origin);
+  const development = env.NODE_ENV === 'development';
   if (
     !origin.startsWith('https://') &&
     !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
@@ -51,7 +62,16 @@ export function integrationConfig(
       throw new Error('SUPABASE_URL requires HTTPS');
   }
   return {
-    origin,
+    origin: request
+      ? (trustedRequestOrigin(request, {
+          origin,
+          trustedOrigins,
+          development,
+        }) ?? origin)
+      : origin,
+    callbackOrigin: origin,
+    trustedOrigins,
+    development,
     mode,
     encryptionKey: env.INTEGRATION_ENCRYPTION_KEY || '',
     clientId: env.STRAVA_CLIENT_ID || '',

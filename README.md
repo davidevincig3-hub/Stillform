@@ -1,5 +1,12 @@
 # Stillform — Adaptive Training Coach
 
+## Private daily-use deployment
+
+Production setup and the stable HTTPS origin are documented in
+[DEPLOYMENT.md](docs/DEPLOYMENT.md). The existing account protects all production
+pages; server APIs verify Supabase owners. No second database or history bootstrap
+is needed. Localhost and trusted HTTPS LAN development remain supported.
+
 ## Account Gym persistence
 
 Account-bound normalized Supabase storage, revision checks, durable local drafts and

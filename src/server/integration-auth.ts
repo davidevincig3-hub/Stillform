@@ -4,14 +4,10 @@ import { z } from 'zod';
 import type { IntegrationConfig } from './integration-config';
 import { seal, unseal, secretEqual } from './integration-security';
 import { DEV_OWNER } from './integration-repository';
+import { trustedRequestOrigin } from './trusted-origins';
+import { authSession } from './auth-session';
 export const SESSION_COOKIE = 'stillform-integration-session',
   STATE_COOKIE = 'stillform-strava-state';
-const authSession = z.object({
-  owner: z.uuid(),
-  accessToken: z.string().optional(),
-  refreshToken: z.string().optional(),
-  expires: z.number(),
-});
 export class AuthError extends Error {
   constructor(
     message = 'Sign in to integrations first',
@@ -30,7 +26,8 @@ function cookieOptions(c: IntegrationConfig, maxAge: number) {
   };
 }
 export function checkOrigin(request: Request, c: IntegrationConfig) {
-  if (request.headers.get('origin') !== c.origin)
+  const origin = trustedRequestOrigin(request, c);
+  if (!origin || request.headers.get('origin') !== origin)
     throw new AuthError('Request origin rejected', 403);
 }
 async function authRequest(c: IntegrationConfig, path: string, body: unknown) {
@@ -95,7 +92,12 @@ export async function requireOwner(
   c: IntegrationConfig,
   cookieName = SESSION_COOKIE,
 ) {
-  const cookie = (await cookies()).get(cookieName)?.value;
+  const jar = await cookies();
+  const effectiveCookie =
+    cookieName === SESSION_COOKIE && !jar.get(cookieName)
+      ? 'stillform-gym-session'
+      : cookieName;
+  const cookie = jar.get(effectiveCookie)?.value;
   if (!cookie) throw new AuthError();
   let session: z.infer<typeof authSession>;
   try {
@@ -120,7 +122,7 @@ export async function requireOwner(
       expires: Date.now() + r.expires_in * 1000,
     };
     (await cookies()).set(
-      cookieName,
+      effectiveCookie,
       seal(session, c.encryptionKey),
       cookieOptions(c, 21600),
     );
@@ -142,6 +144,7 @@ export async function logoutSession() {
   (await cookies()).delete(SESSION_COOKIE);
   (await cookies()).delete(STATE_COOKIE);
   (await cookies()).delete('stillform-polar-state');
+  (await cookies()).delete('stillform-gym-session');
 }
 export async function setState(
   value: string,

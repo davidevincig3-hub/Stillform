@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Shell } from '@/components/shell';
 import { WorkoutProvider } from '@/components/workout-provider';
 import './globals.css';
+import { privateAppEnabled } from '@/server/app-access';
 export const metadata: Metadata = {
   title: 'Stillform · Adaptive Training',
   description:
@@ -22,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <WorkoutProvider>
+        <WorkoutProvider autoConnect={privateAppEnabled()}>
           <Shell>{children}</Shell>
         </WorkoutProvider>
       </body>

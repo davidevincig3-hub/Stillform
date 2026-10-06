@@ -142,3 +142,52 @@ it('uses a separate secure Gym cookie without replacing the integration session'
   expect(await requireOwner(secure, 'stillform-gym-session')).toBe(owner);
   expect(jar.get).toHaveBeenCalledWith('stillform-gym-session');
 });
+it('shares the validated Gym session with integration reads and refreshes that same cookie without accepting another owner', async () => {
+  const secure = { ...config, origin: 'https://stillform.example.test' };
+  const gymCookie = seal(
+    {
+      owner,
+      accessToken: 'synthetic-expired',
+      refreshToken: 'synthetic-refresh',
+      expires: Date.now() - 1,
+    },
+    config.encryptionKey,
+  );
+  jar.get.mockImplementation((name: string) =>
+    name === 'stillform-gym-session' ? { value: gymCookie } : undefined,
+  );
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      url.includes('grant_type=refresh_token')
+        ? json({
+            access_token: 'synthetic-rotated',
+            refresh_token: 'synthetic-rotated-refresh',
+            expires_in: 3600,
+            user: { id: owner },
+          })
+        : json({ id: owner }),
+    ),
+  );
+  expect(await requireOwner(secure)).toBe(owner);
+  expect(jar.set).toHaveBeenCalledWith(
+    'stillform-gym-session',
+    expect.any(String),
+    expect.objectContaining({ secure: true, httpOnly: true }),
+  );
+  jar.get.mockImplementation((name: string) =>
+    name === 'stillform-gym-session'
+      ? {
+          value: seal(
+            { owner, accessToken: 'synthetic', expires: Date.now() + 600000 },
+            config.encryptionKey,
+          ),
+        }
+      : undefined,
+  );
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => json({ id: '20000000-0000-4000-8000-000000000002' })),
+  );
+  await expect(requireOwner(secure)).rejects.toThrow();
+});

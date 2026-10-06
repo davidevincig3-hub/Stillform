@@ -1,5 +1,15 @@
 # Decision log
 
+## 2026-10-06 — Private production surface
+
+Use Vercel's Next.js Node runtime and the existing Supabase project, with no new
+data migration. Keep encrypted provider credentials under the exact existing key.
+Use explicit exact trusted origins and same-origin write validation, not permissive
+CORS or forwarded-header trust. A production page gate complements API owner checks;
+main account sign-in serves all sections and loads account Gym automatically.
+OAuth authorization stays on APP_ORIGIN; existing reads work on trusted development
+origins. Do not reauthorize Polar during deployment. See [deployment](DEPLOYMENT.md).
+
 ## 2026-10-06 — Account Gym cloud persistence
 
 Preserve existing domain IDs and snapshots using dedicated text-key normalized owner

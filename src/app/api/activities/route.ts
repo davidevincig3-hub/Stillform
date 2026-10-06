@@ -4,9 +4,9 @@ import { requireOwner, AuthError } from '@/server/integration-auth';
 import { integrationRepository } from '@/server/integration-repository';
 import { presentActivity } from '@/server/activity-presentation';
 export const dynamic = 'force-dynamic';
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const c = integrationConfig(),
+    const c = integrationConfig(undefined, request),
       owner = await requireOwner(c),
       s = await integrationRepository(c).read(owner);
     return NextResponse.json(

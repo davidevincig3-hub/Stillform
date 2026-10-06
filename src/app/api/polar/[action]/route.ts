@@ -63,7 +63,7 @@ export async function GET(
   const { action } = await params;
   let c;
   try {
-    c = integrationConfig();
+    c = integrationConfig(undefined, request);
     const missing = missingConfiguration(c, 'polar');
     if (action === 'status' && missing.length)
       return response({
@@ -112,6 +112,11 @@ export async function GET(
       });
     }
     if (action === 'connect') {
+      if (c.origin !== (c.callbackOrigin ?? c.origin))
+        throw new AuthError(
+          'Open Integrations on APP_ORIGIN to authorize Polar; existing connection reads and sync remain available here.',
+          400,
+        );
       if (new URL(request.url).searchParams.get('account') !== 'confirmed')
         throw new AuthError(
           'Confirm your own Polar account, or the same account when reconnecting',
@@ -123,7 +128,7 @@ export async function GET(
       url.search = new URLSearchParams({
         client_id: c.polarClientId,
         response_type: 'code',
-        redirect_uri: `${c.origin}/api/polar/callback`,
+        redirect_uri: `${c.callbackOrigin ?? c.origin}/api/polar/callback`,
         scope: polarScopes.join(' '),
         state: state.nonce,
       }).toString();
@@ -189,7 +194,7 @@ export async function POST(
   { params }: { params: Promise<{ action: string }> },
 ) {
   try {
-    const c = integrationConfig();
+    const c = integrationConfig(undefined, request);
     checkOrigin(request, c);
     const { action } = await params;
     if (

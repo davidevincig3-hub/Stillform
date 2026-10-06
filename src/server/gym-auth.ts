@@ -1,8 +1,8 @@
 import 'server-only';
-import { isPrivateIPv4 } from '../domain/lan-host.mjs';
 import { AuthError, requireOwner, SESSION_COOKIE } from './integration-auth';
 import { cookies } from 'next/headers';
 import { integrationConfig, missingConfiguration } from './integration-config';
+import { trustedRequestOrigin } from './trusted-origins';
 export const GYM_SESSION_COOKIE = 'stillform-gym-session';
 export async function requireGymOwner(
   config: ReturnType<typeof integrationConfig>,
@@ -13,12 +13,11 @@ export async function requireGymOwner(
     jar.get(GYM_SESSION_COOKIE) ? GYM_SESSION_COOKIE : SESSION_COOKIE,
   );
 }
-// Integration/OAuth origins remain unchanged. Gym additionally supports one explicit HTTPS development LAN origin.
 export function gymConfig(
   request: Request,
   env: NodeJS.ProcessEnv = process.env,
 ) {
-  const config = integrationConfig(env);
+  const config = integrationConfig(env, request);
   if (
     config.mode !== 'supabase' ||
     missingConfiguration(config, 'shared').length
@@ -27,33 +26,13 @@ export function gymConfig(
       'Account Gym requires configured Supabase authentication',
       503,
     );
-  const url = new URL(request.url);
-  // Next's HTTPS development server constructs Request.url with its bind host
-  // (0.0.0.0), not the browser host. Resolve only exact allowed TLS authorities;
-  // never trust forwarded protocol/host headers or relax HTTP LAN restrictions.
-  if (env.NODE_ENV === 'development' && url.origin === 'https://0.0.0.0:3000') {
-    const host = request.headers.get('host');
-    const allowed = ['localhost:3000', '127.0.0.1:3000'];
-    if (env.STILLFORM_LAN_HOST && isPrivateIPv4(env.STILLFORM_LAN_HOST))
-      allowed.push(`${env.STILLFORM_LAN_HOST}:3000`);
-    if (host && allowed.includes(host)) url.host = host;
-  }
-  const loopback = ['localhost', '127.0.0.1'].includes(url.hostname);
-  const trustedLan =
-    env.NODE_ENV === 'development' &&
-    url.protocol === 'https:' &&
-    url.hostname === env.STILLFORM_LAN_HOST &&
-    isPrivateIPv4(url.hostname) &&
-    url.port === '3000';
-  if (!loopback && !trustedLan && url.origin !== config.origin)
+  const origin = trustedRequestOrigin(request, config);
+  if (!origin)
     throw new AuthError(
       'Account Gym requires HTTPS on the configured trusted origin. HTTP LAN remains local-only.',
       403,
     );
-  if (!loopback && url.protocol !== 'https:')
-    throw new AuthError('Account Gym requires HTTPS', 403);
-  if (request.method !== 'GET' && request.headers.get('origin') !== url.origin)
+  if (request.method !== 'GET' && request.headers.get('origin') !== origin)
     throw new AuthError('Request origin is not trusted', 403);
-  // Secure cookie for HTTPS LAN, same verified Supabase owner as localhost; no secrets returned.
-  return { ...config, origin: url.origin };
+  return { ...config, origin };
 }

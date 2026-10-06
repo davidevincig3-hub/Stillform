@@ -13,6 +13,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:smoke": "playwright test",
+    "test:private": "playwright test --config playwright.private.config.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

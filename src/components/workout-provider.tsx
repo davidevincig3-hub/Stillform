@@ -40,7 +40,13 @@ interface WorkoutContext {
   cloudClient: GymCloudClient;
 }
 const Context = createContext<WorkoutContext | null>(null);
-export function WorkoutProvider({ children }: { children: ReactNode }) {
+export function WorkoutProvider({
+  children,
+  autoConnect = false,
+}: {
+  children: ReactNode;
+  autoConnect?: boolean;
+}) {
   const raw = useBrowserValue(gymStorageKey);
   const legacy = useBrowserValue(legacyStorageKey);
   const ready = useBrowserReady();
@@ -65,7 +71,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   );
   useEffect(() => {
     cloudClient.restore();
-    if (cloudClient.state.status !== 'local') void cloudClient.connect();
+    if (autoConnect || cloudClient.state.status !== 'local')
+      void cloudClient.connect();
     const refresh = () => {
       if (cloudClient.state.cache) void cloudClient.connect();
     };
@@ -77,7 +84,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('online', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [cloudClient]);
+  }, [cloudClient, autoConnect]);
   const restored = useMemo(() => {
     try {
       return { store: loadGymStore(raw, legacy), error: '' };

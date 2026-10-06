@@ -8,11 +8,11 @@ import {
 } from '@/server/activity-presentation';
 export const dynamic = 'force-dynamic';
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const c = integrationConfig(),
+    const c = integrationConfig(undefined, request),
       owner = await requireOwner(c),
       repo = integrationRepository(c),
       s = await repo.read(owner),

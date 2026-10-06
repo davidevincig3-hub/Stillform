@@ -1,5 +1,12 @@
 # Architecture
 
+Production runs the existing Next.js routes on Vercel with server-only environment
+configuration and existing Supabase authority. Next Proxy gates pages using the
+encrypted session; personal-data APIs independently verify Supabase identity/owner.
+Shared exact-origin configuration supports canonical production, loopback development
+and verified HTTPS LAN; same-origin CSRF checks remain mandatory. OAuth callbacks
+remain canonical to avoid cross-host state cookies. See [deployment](DEPLOYMENT.md).
+
 ## Account Gym storage boundary
 
 Pure Gym commands still produce validated GymStore snapshots. gym-cloud-codec normalizes

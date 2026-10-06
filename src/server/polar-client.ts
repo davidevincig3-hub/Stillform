@@ -164,7 +164,7 @@ export class PolarClient {
       new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: `${this.config.origin}/api/polar/callback`,
+        redirect_uri: `${this.config.callbackOrigin ?? this.config.origin}/api/polar/callback`,
       }),
     );
     return {
