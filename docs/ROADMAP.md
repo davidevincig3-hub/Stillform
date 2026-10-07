@@ -1,5 +1,12 @@
 # Roadmap
 
+Gym Performance Trend V1 is implemented, separate from conservative comparisons:
+fixed-cohort descriptive weight/repetition index, group/exercise navigation and honest
+gaps. Next: deliberately verify canonical special-model classifications (especially
+imported barbell/Smith bench identities), prospectively review usefulness and consider
+a SQL-side bounded history projection if account sizes warrant it. No automatic
+metadata repair, physiological interpretation or progression advice. See GYM_TREND.md.
+
 ## Account Gym adoption gate
 
 Implemented and adopted for the current owner: normalized persistence, reviewed

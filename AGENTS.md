@@ -10,6 +10,9 @@ Gym logging and descriptive analytics use confirmed real local or account data.
 Exercise performance V1 uses full relevant history before cloud pagination, with
 recorded PRs separate from conservative effort-matched first-set load comparisons.
 See docs/GYM_PERFORMANCE.md; no progression/stall/deterioration advice or AI.
+Gym main's descriptive Performance Trend V1 is separate from conservative comparisons;
+see docs/GYM_TREND.md. Preserve audited canonical model selection, snapshot groups,
+fixed cohorts/gaps and equal exercise/group weights; never retrofit missing metadata.
 
 ## Working practices
 

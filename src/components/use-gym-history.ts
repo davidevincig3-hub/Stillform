@@ -22,11 +22,12 @@ export function useGymHistory(query: GymReadQuery) {
   const [retryCount, setRetryCount] = useState(0);
   const key = JSON.stringify(query);
   const previousQuery = query.scope === 'previous';
+  const stableHistoryQuery = previousQuery || query.scope === 'trend';
   const client = context.cloudClient;
   const owner =
     context.cloud.cache?.owner ??
-    (previousQuery ? context.cloud.snapshot?.owner : undefined);
-  const revision = previousQuery
+    (stableHistoryQuery ? context.cloud.snapshot?.owner : undefined);
+  const revision = stableHistoryQuery
     ? context.cloud.historyEpoch
     : context.cloud.cache?.revision;
   const identity = JSON.stringify([owner, key]);
@@ -51,16 +52,16 @@ export function useGymHistory(query: GymReadQuery) {
             !status || status === 408 || status === 429 || status >= 500;
           setRequestState({
             identity,
-            error: !previousQuery
+            error: !stableHistoryQuery
               ? e instanceof Error
                 ? e.message
                 : 'History could not be loaded'
               : status === 401 || status === 403
                 ? 'History access requires account verification.'
-                : `Previous history could not be refreshed${e instanceof CloudRequestError && e.diagnostic ? ` (${e.diagnostic.code}, HTTP ${status})` : ''}.`,
+                : `${previousQuery ? 'Previous history' : 'Performance trend'} could not be refreshed${e instanceof CloudRequestError && e.diagnostic ? ` (${e.diagnostic.code}, HTTP ${status})` : ''}.`,
             stamp,
           });
-          if (previousQuery && attempt === 0 && retryable)
+          if (stableHistoryQuery && attempt === 0 && retryable)
             timer = setTimeout(() => load(1), 1500);
         });
     };
@@ -78,18 +79,19 @@ export function useGymHistory(query: GymReadQuery) {
     stamp,
     retryCount,
     previousQuery,
+    stableHistoryQuery,
   ]);
   const loaded =
     result?.key === key &&
     result.value.owner === owner &&
-    (previousQuery || result.value.revision === revision)
+    (stableHistoryQuery || result.value.revision === revision)
       ? result.value
       : null;
   return {
     ...context,
     store:
       loaded?.store ??
-      (previousQuery && owner
+      (stableHistoryQuery && owner
         ? { ...initialGymStore(), exercises: [], history: [] }
         : context.store),
     ready: context.ready && (!owner || !!loaded),
@@ -103,5 +105,6 @@ export function useGymHistory(query: GymReadQuery) {
         requestState.stamp !== stamp),
     retryHistory: () => setRetryCount((value) => value + 1),
     performance: loaded?.summary?.performance,
+    trend: loaded?.summary?.trend,
   };
 }

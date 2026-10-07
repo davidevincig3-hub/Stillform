@@ -1,5 +1,13 @@
 # Product specification
 
+## Gym Performance Trend V1
+
+Gym main shows one descriptive weight/repetition index with group/exercise drilldown,
+fixed endpoint-qualified cohorts, weekly trailing 28-day median windows and reference 100. Unknown effort remains valid descriptive evidence; unassigned snapshots stay
+individually inspectable and never enter muscle aggregates. Full history and logger
+references remain available; conservative Performance V1/Recovery comparisons are
+unchanged. No progression or physiological inference. See [method and limitations](GYM_TREND.md).
+
 ## Gym performance V1
 
 Exercise detail provides recorded load/repetition history and narrowly defined

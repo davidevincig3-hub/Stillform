@@ -1,5 +1,20 @@
 # Decision log
 
+## 2026-10-07 — Descriptive Gym Performance Trend V1
+
+Keep a new descriptive index separate from effort-matched comparisons. Use the
+owner-supplied figure points from Nuzzo et al. with product-chosen linear interpolation
+and inversion, never claim an individually validated 1RM. Select special tables only
+through audited canonical IDs. Select first completed work sets, retain snapshot
+equipment/block/type/superset/group contexts, reduce to daily medians, and freeze
+baseline/final qualified cohorts across twelve weekly trailing 28-day points.
+Require two dates; missing cohort inputs make gaps. Average protocols within an
+exercise, exercises within groups and groups within total equally. Unassigned data
+remains individual; no anatomical backfill. One compact full-history account query
+and bounded history-epoch caching preserve logger reads and persistence. No database
+or real-history mutation; classification curation and SQL read optimization remain
+explicit limitations. See GYM_TREND.md.
+
 ## 2026-10-07 — Resilient logger history
 
 Separate descriptive four-exposure reads from performance analytics and account-wide

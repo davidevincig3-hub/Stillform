@@ -488,7 +488,7 @@ export class GymCloudClient {
         'History account requires verification.',
         403,
       );
-    if (query.scope === 'previous') {
+    if (query.scope === 'previous' || query.scope === 'trend') {
       const owner = this.state.cache?.owner ?? this.state.snapshot?.owner;
       const key = JSON.stringify([owner, this.state.historyEpoch, query]);
       const prior = this.previousReads.get(key);

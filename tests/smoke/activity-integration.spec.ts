@@ -202,7 +202,7 @@ async function seed(page: import('@playwright/test').Page) {
       localStorage.setItem('adaptive-coach.gym.v2', JSON.stringify(s));
   }, store);
 }
-test('Gym main has three recent workouts and search-first exercise history; full browsers paginate/filter', async ({
+test('Gym main has three recent workouts and performance trend; full history browsers preserve search and pagination', async ({
   page,
 }) => {
   await seed(page);
@@ -213,10 +213,12 @@ test('Gym main has three recent workouts and search-first exercise history; full
   await expect(summaries).toHaveCount(3);
   await expect(summaries.first()).toContainText('Synthetic workout 029');
   await expect(
-    page
-      .getByTestId('exercise-history-search')
-      .getByRole('link', { name: /Synthetic exercise/ }),
-  ).toHaveCount(3);
+    page.getByRole('heading', { name: 'Performance trend', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId('exercise-history-search')).toHaveCount(0);
+  await page
+    .getByRole('link', { name: /Browse all exercise histories/ })
+    .click();
   await page.getByLabel('Search exercise history').fill('exercise 126');
   await expect(
     page
@@ -228,9 +230,7 @@ test('Gym main has three recent workouts and search-first exercise history; full
       .getByTestId('exercise-history-search')
       .getByRole('link', { name: /Synthetic exercise/ }),
   ).toHaveCount(1);
-  await page
-    .getByRole('link', { name: /Browse all exercise histories/ })
-    .click();
+  await page.getByLabel('Search exercise history').fill('');
   await expect(
     page.getByRole('link', { name: /Synthetic exercise/ }),
   ).toHaveCount(20);

@@ -1,5 +1,10 @@
 # Stillform — Adaptive Training Coach
 
+Gym main includes **Performance trend**, a descriptive weight/repetition index with
+muscle-group/exercise drilldown and fixed-cohort gaps. Recorded history, logger
+references and conservative comparisons are preserved. See [method and limitations](docs/GYM_TREND.md);
+it is not a physiological, hypertrophy or measured maximal-strength score.
+
 ## Private daily-use deployment
 
 Production setup and the stable HTTPS origin are documented in

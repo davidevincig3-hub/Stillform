@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { gymTrend, type GymTrend } from '../analytics/gym-trend';
 import type { GymStore } from './gym-storage';
 import { recentExercises } from '../analytics/gym-shortlist';
 import { weeklyGymSummary, realHistory } from '../analytics/gym';
@@ -20,6 +21,7 @@ export const gymReadQuerySchema = z.object({
       'workout',
       'all',
       'evidence',
+      'trend',
     ])
     .default('workspace'),
   page: z.coerce.number().int().min(0).max(100000).default(0),
@@ -29,6 +31,7 @@ export const gymReadQuerySchema = z.object({
   title: z.string().default(''),
   from: z.string().default(''),
   to: z.string().default(''),
+  asOf: z.iso.date().optional(),
 });
 export type GymReadQuery = Partial<z.infer<typeof gymReadQuerySchema>>;
 export interface GymReadSummary {
@@ -38,6 +41,7 @@ export interface GymReadSummary {
   exerciseHistory: ReturnType<typeof findExerciseHistory>;
   weekly: ReturnType<typeof weeklyGymSummary>;
   performance?: GymPerformance;
+  trend?: GymTrend;
 }
 export function selectGymView<Q extends GymReadQuery = { scope: 'workspace' }>(
   store: GymStore,
@@ -48,6 +52,29 @@ export function selectGymView<Q extends GymReadQuery = { scope: 'workspace' }>(
 export function selectGymView(store: GymStore, input: GymReadQuery = {}) {
   const q = gymReadQuerySchema.parse(input);
   let history = realHistory(store.history);
+  if (q.scope === 'trend') {
+    return {
+      store: {
+        ...store,
+        exercises: [],
+        routines: [],
+        history: [],
+        active: null,
+        legacyArchive: [],
+        hevyMappings: {},
+        importBatches: [],
+        exercisePreferences: {},
+      },
+      summary: {
+        total: history.length,
+        titles: [],
+        shortlist: { detected: 0, rows: [], dismissed: [] },
+        exerciseHistory: [],
+        weekly: weeklyGymSummary([]),
+        trend: gymTrend(history, q.asOf),
+      },
+    };
+  }
   if (q.scope === 'previous') {
     if (!q.id) throw new Error('Previous exposure requires an exercise ID');
     history = history

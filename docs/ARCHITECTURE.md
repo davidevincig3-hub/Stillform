@@ -1,5 +1,12 @@
 # Architecture
 
+Gym main's Performance Trend V1 uses pure `analytics/gym-trend.ts`, a compact `trend`
+account summary calculated once before pagination, and group/exercise selection in
+memory. Owner/query/history-epoch coalescing prevents active saves causing redundant
+trend requests. This read-only extension changes no persistence or logger contracts;
+no whole-history browser clone or per-exercise account reconstruction is added.
+See [method, query boundaries and limitations](GYM_TREND.md).
+
 Gym performance V1 uses `analytics/gym-performance.ts` for both local history and
 account exercise-query summaries before pagination. The shared first-set primitive
 in `gym-comparison.ts` preserves Recovery behavior; performance additionally groups

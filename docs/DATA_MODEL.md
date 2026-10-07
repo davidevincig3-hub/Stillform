@@ -1,5 +1,16 @@
 # Data model
 
+## Gym Performance Trend V1 (computed, not persisted)
+
+`GymTrend` carries version, Rome assessment date, snapshot exercise/group coverage,
+exclusions and explicit canonical protocols. Each protocol retains model, historical
+equipment, repeated-block occurrence, exact set type, superset membership, primary
+group, initial window and twelve weekly window medians/date counts/effort contexts.
+`gymTrendView` derives a fixed endpoint-qualified cohort and nullable indices, with
+contributing groups/exercises and window coverage. Unknown anatomy is never backfilled.
+These are read projections only: no domain snapshot, local/export schema, account
+revision, RLS, CAS or journal changes. See [semantics](GYM_TREND.md).
+
 ## Account Gym V1
 
 Migration 0006 stores entity rows with owner UUID, preserved text ID, parent/order and

@@ -7,7 +7,7 @@ import { useWorkout } from './workout-provider';
 import { PageHeading } from './assessment';
 import { GymHistory } from './gym-history';
 import { RecentExercises } from './recent-exercises';
-import { ExerciseHistorySearch } from './exercise-history-search';
+import { GymPerformanceTrend } from './gym-performance-trend';
 import { GymAnalytics } from './gym-analytics';
 import { GymExportControls } from './gym-export-controls';
 import { GymCloudControls } from './gym-cloud-controls';
@@ -209,7 +209,7 @@ export function GymDashboard() {
       )}
       <RecentExercises />
       <GymHistory />
-      <ExerciseHistorySearch />
+      <GymPerformanceTrend />
       <details className="card">
         <summary>Descriptive analytics</summary>
         <GymAnalytics />

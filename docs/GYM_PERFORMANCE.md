@@ -1,5 +1,11 @@
 # Gym Analytics & Performance Engine V1
 
+Gym main now uses a separate [Performance Trend V1](GYM_TREND.md) descriptive index.
+Its weight/repetition transformation is a product choice, independent of all
+conservative comparison and Recovery rules below. Full set history and recorded PRs
+remain available. Earlier “no e1RM” statements describe this conservative module;
+the new trend is not a measured/validated maximal-strength estimate.
+
 Exercise detail answers what was recorded, which sessions can be compared and why
 confidence is limited. No progression advice, physiological improvement claim,
 stall/deterioration classification, e1RM, hypertrophy score or AI is implemented.
