@@ -9,9 +9,14 @@ is needed. Localhost and trusted HTTPS LAN development remain supported.
 
 ## Account Gym persistence
 
+Exercise detail includes Gym Performance V1: recorded trends/PRs, matched first-set
+load comparisons, exact references, effort coverage and exclusion explanations.
+See [rules and limitations](docs/GYM_PERFORMANCE.md). No progression advice or AI.
+
 Account-bound normalized Supabase storage, revision checks, durable local drafts and
-reviewed bootstrap are implemented. Live bootstrap requires approval and migration 0006;
-no existing desktop history is uploaded automatically. See [account Gym](docs/GYM_CLOUD.md)
+reviewed bootstrap are implemented and adopted for the current owner. New account
+bootstrap requires approval and migration 0006; the existing populated account must
+not be bootstrapped again. No desktop history is uploaded automatically. See [account Gym](docs/GYM_CLOUD.md)
 and [trusted HTTPS phone setup](docs/MOBILE_GYM.md).
 
 Mobile-first training and recovery application. **Gym logs and descriptive analytics
@@ -128,7 +133,8 @@ and explicit batch confirmation. See the Hevy workflow below. Strava API calls r
 The PWA has a manifest, icons and static offline fallback; install through your
 browser's install menu on localhost or HTTPS. Full offline editing is deferred.
 Saved workout data survives offline, but reopening the app requires the server.
-Supabase SQL is an unapplied foundation draft and needs database/RLS testing.
+Current production uses deployed Supabase migrations through 0006. New deployments
+must review/apply migrations and verify ownership/RLS; see docs/DEPLOYMENT.md.
 
 ## Read first
 
@@ -211,7 +217,7 @@ one source workout. Repeated set indices split exercise blocks with a warning;
 original source order and indices are retained. All completed set types contribute
 to descriptive set totals, including warmups/timed sets; this is not a hypertrophy
 estimate. Muscle metadata is snapshotted at import; later library edits do not
-retroactively rewrite history. SQL remains unapplied.
+retroactively rewrite history. Account persistence preserves the same snapshots.
 
 Hevy milestone verification: 42 synthetic unit tests, 17 production Chromium browser
 tests, TypeScript, lint, formatting and production build pass. The optional ignored
@@ -222,10 +228,9 @@ quota failure without partial mutation. Earlier foundation tests remain intact.
 ## Real Strava integration setup
 
 Gym works without configuration. Strava requires authenticated **server** persistence;
-Supabase is the intended production backend. The SQL below has been prepared, not
-applied or verified against your database. This milestone does not move browser-local
-Gym data to Supabase. Export a Gym JSON backup regularly and keep the existing browser
-and origin for your imported history.
+Supabase is the current production backend. The setup below is for new deployments;
+do not reapply migrations or bootstrap the existing populated account. Strava remains
+dormant. Account Gym uses migration 0006; independent local backups remain preserved.
 
 1. Create/select a Supabase project. Review and apply `supabase/migrations/0001_foundation.sql`
    through `0004_secure_integrations.sql` in numerical order through your normal migration
@@ -399,7 +404,7 @@ credentials are **not required** for Polar. Connection never imports history aut
    `0001` through `0005` in order (or only unapplied ones). Nothing applies them automatically.
    Create your integration email/password user under Authentication; keep public signup off
    if this remains a personal app. Check service-only table/RPC grants and owner isolation
-   before production. SQL/RLS verification against a real database is still pending.
+   before a new production deployment. Existing production acceptance is recorded in DEPLOYMENT.md.
 2. Sign in with your Polar Flow account at [AccessLink administration](https://admin.polaraccesslink.com).
    Create a client for Stillform with your actual service details. Register the exact redirect
    **`http://localhost:3000/api/polar/callback`**. Configure that redirect URL, not merely the
@@ -484,7 +489,8 @@ is a premium user subscription API, not a notification API. Dormant Strava webho
 quality/context, raw revisions and resumable jobs; `server/polar-*` implement the adapter,
 normalizers and services. Tokens use the shared encrypted account repository; refreshed
 tokens persist before data requests, one 401 is retried and revoked grants require reconnect.
-Canonical registry v1 and Gym storage v2/revision 2 are preserved. SQL 0005 is unapplied.
+Canonical registry v1 and local Gym storage v2/revision 3 are preserved. SQL 0005 is
+deployed for the current owner; account Gym uses 0006.
 Polar strength links to existing Gym summaries without creating sets/CompletedWorkouts.
 The same matcher supports future Polar+Strava copies and manual ambiguous-match decisions.
 Existing selected fields stay selected except recorded Polar HR takes precedence over Strava

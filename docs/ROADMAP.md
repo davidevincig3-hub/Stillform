@@ -2,17 +2,21 @@
 
 ## Account Gym adoption gate
 
-Implemented: normalized owner persistence, reviewed idempotent desktop bootstrap, local
-pending drafts, stale revision conflicts and cross-device polling/resume. Next: review
-and deploy migration 0006, approve real desktop bootstrap, verify counts/IDs and trusted
-HTTPS phone access with the same account. Then reduce snapshot write cost with entity
-diffs if needed before Gym Analytics V1 expansion. No live upload occurs automatically.
+Implemented and adopted for the current owner: normalized persistence, reviewed
+desktop bootstrap, pending journals, revision conflicts, bounded browser reads and
+shared phone/desktop use. Production acceptance is recorded in DEPLOYMENT.md.
+New accounts still require reviewed bootstrap; no upload occurs automatically.
+
+Gym Performance V1 adds recorded exercise trends/records and conservative comparable
+first-set load summaries before cloud pagination. See GYM_PERFORMANCE.md. Next:
+evaluate actual comparison/effort coverage before designing progression or stall
+logic; consider SQL-side bounded reads/writes if reconstruction cost warrants it.
 
 Daily Gym blockers addressed: explicit trusted-LAN dev mode, reviewed JSON bootstrap
 into an empty phone browser, real-history recent/frequent exercise shortlist with
 pin/dismiss controls, and synthetic verification of incremental Hevy export replay.
-Full cross-device Gym merge/cloud sync and edited-Hevy-session reconciliation remain
-future work. Next Gym analytics should build on the existing canonical IDs and real-only gates.
+Cross-device account persistence is implemented. Automatic conflict merge and
+edited-Hevy-session reconciliation remain future work.
 
 ## Current status — Recovery Engine V1 implemented
 
@@ -39,7 +43,7 @@ Do not require a historic sleep baseline to start collection.
 Follow-ups: authenticated physiological export/deletion, normalized/indexed larger-history
 storage, client-wide distributed budget and operational retry worker before multi-user hosting,
 continuous/PPI exploratory charts, explicit account-switch support if a stable identity contract
-becomes available, Gym cloud/reconciliation with user-approved migration and populated-store JSON merge.
+becomes available, automatic Gym conflict reconciliation and populated-store JSON merge.
 After real observation quality is understood, evaluate the Recovery V1 heuristics and
 comparable-running analytics separately, then Plan decisions and grounded Coach/Consensus.
 
@@ -96,11 +100,11 @@ OAuth/rotation/revocation, server-only encrypted token repositories, Supabase Au
 canonical registry/source/field provenance, reusable matching and persisted review decisions,
 Gym strength linking, bounded resumable backfill, separate streams/laps, webhook queue/processor,
 real Running history and searchable/paginated Gym history are implemented with synthetic tests.
-Live account authorization, unapplied SQL migration verification, real rate limits and public
-webhook delivery remain pending credentials/deployment. Supabase is required for production
+Live Strava authorization, real Strava rate limits and public webhook delivery remain
+pending credentials; current production already uses the deployed Supabase schema. Supabase is required for production
 integrations, not for local Gym; isolated encrypted dev-file mode is development-only.
 
-Recommended next milestone: configure Supabase and Strava, verify owner isolation/RPC leases
+Historical Strava recommendation (superseded by Polar and current production): configure Supabase and Strava, verify owner isolation/RPC leases
 in the actual database, authorize one real account deliberately, backfill with matching review,
 and inspect real HR/GPS/laps missingness without enabling physiological decisions. Then add
 operational webhook worker/retry observability, canonical export/deletion and field-precedence

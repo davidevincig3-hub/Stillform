@@ -6,7 +6,10 @@ Stillform is a Next.js App Router / React / strict TypeScript / Tailwind / Recha
 application. Use pnpm and preserve its lockfile. Read `docs/PRODUCT_SPEC.md` and
 `docs/DECISIONS.md` before architectural changes. Supabase SQL is intended for
 configured deployments. Polar v4 and dormant Strava OAuth, authenticated persistence and canonical activity sync are implemented server-side. Polar live ingestion is verified for the current owner. Recovery Engine V1 provides deterministic personal-baseline patterns with explicitly unvalidated product heuristics; Calendar, automated training decisions and AI remain stubs.
-Gym logging and descriptive analytics use confirmed real local data.
+Gym logging and descriptive analytics use confirmed real local or account data.
+Exercise performance V1 uses full relevant history before cloud pagination, with
+recorded PRs separate from conservative effort-matched first-set load comparisons.
+See docs/GYM_PERFORMANCE.md; no progression/stall/deterioration advice or AI.
 
 ## Working practices
 

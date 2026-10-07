@@ -1,5 +1,13 @@
 # Product specification
 
+## Gym performance V1
+
+Exercise detail provides recorded load/repetition history and narrowly defined
+records, plus first-set load comparisons with exact session references, effort
+coverage, exclusions and limited evidence confidence. Account results consider
+relevant history before pagination; local mode uses the same pure analytics. No
+progression, stall/deterioration labels or AI. See [comparison rules](GYM_PERFORMANCE.md).
+
 ## Account Gym milestone
 
 After explicit reviewed bootstrap/account loading, authenticated Gym history, routines,
@@ -49,8 +57,8 @@ recovery-input query. Automatic quality
 checks may eventually request review but cannot silently invalidate user observations.
 
 This section supersedes earlier statements that Polar is a stub. Strava remains dormant,
-not removed; credentials for it are unnecessary to use Polar. Browser Gym/Hevy data stays
-local and authoritative. Connecting does not import automatically. Secure Integrations
+not removed; credentials for it are unnecessary to use Polar. Local Gym/Hevy remains
+authoritative in local mode; account mode uses Supabase. Connecting does not import automatically. Secure Integrations
 offers explicit training/Recovery/all sync, date bounds, checkpoints, Continue, scopes,
 errors, empty windows and oldest/newest returned. Zero historical nights is success.
 
@@ -64,16 +72,18 @@ Recovery after connection displays a distinct real source view, including an hon
 state. The separate labelled sample view never fills real chart gaps. Real display includes
 nightly vendor RMSSD/RRI/respiration intervals, sleep duration/continuity/efficiency/timing,
 interruptions/phases, edits/completeness, device context, vendor comparisons and 7/28/90-day
-histories with Analyze. No custom Recovery state, recommendations or readiness percentage.
+histories with Analyze. Recovery Engine V1 adds the statistical assessment described above;
+no training recommendations or readiness percentage.
 UI maturity counts complete observations per metric/window; defaults 7/14/28 are configurable,
 not validated physiology. Missing/incomplete nights do not become synthesized baselines.
 Continuous daytime HR and PPI have separate server measurement contexts and count summaries.
 Sensor quality remains unknown; device identity alone proves no sensor type.
 
-Home/Plan/Coach and Running custom analytical cards remain labelled samples. Calendar,
-Consensus, personalized Recovery, drift/threshold/VO2 analytics and real AI are out of scope.
-See README for precise setup, current endpoints/scopes and API limits. Live verification and
-SQL migrations remain pending explicit user configuration; no personal fixtures are used.
+Home recovery uses the real shared engine. Plan/Coach and Running custom analytical
+cards remain labelled samples. Calendar, Consensus, drift/threshold/VO2 analytics and
+real AI are out of scope. Production and the existing account migration were verified
+on 2026-10-06; see DEPLOYMENT.md. New accounts/deployments still require explicit setup
+and reviewed bootstrap; no personal fixtures are used.
 
 ## Principles
 
@@ -116,7 +126,8 @@ suggestions, and rescheduling always requires approval.
 
 ## Gym data and storage
 
-Gym header and sections say real local data; Recovery/Running/Plan/Home remain demo.
+Gym uses real local or account data. Recovery/Home assessment and Running history
+use real configured sources; Plan/Coach and Running analytical cards retain sample labels.
 All personal queries require completed + confirmed user origin. V1 sessions without
 origin are preserved separately as legacy_unverified until reviewed; old sample
 previous text is removed. New workouts have local_logger provenance. Missing HR

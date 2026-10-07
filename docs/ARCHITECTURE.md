@@ -1,5 +1,11 @@
 # Architecture
 
+Gym performance V1 uses `analytics/gym-performance.ts` for both local history and
+account exercise-query summaries before pagination. The shared first-set primitive
+in `gym-comparison.ts` preserves Recovery behavior; performance additionally groups
+block occurrence, exact set type and superset presence. Compact outputs retain
+provenance, reference dates, exclusions and limited confidence. See GYM_PERFORMANCE.md.
+
 Production runs the existing Next.js routes on Vercel with server-only environment
 configuration and existing Supabase authority. Next Proxy gates pages using the
 encrypted session; personal-data APIs independently verify Supabase identity/owner.
@@ -61,7 +67,7 @@ serializes owner operations with existing leases, rotates tokens before reads, r
 The original Strava routes/client remain. Shared review/login are independent of Strava setup.
 
 Shared repositories accept provider-specific encrypted accounts. Polar physiological blobs
-use a separate CAS/versioned `integration_polar` table via unapplied SQL 0005, or encrypted
+use a separate CAS/versioned `integration_polar` table via SQL 0005, or encrypted
 development files under the same existing contract. Legacy dev records default to an empty
 Polar store without changing their Strava or registry state. Supabase REST uses the privileged
 `SUPABASE_SECRET_KEY` in apikey only; deprecated JWT service-role fallback is secondary.
@@ -118,8 +124,8 @@ assessment → candidate comparison → user choice → outcome.
 Gym flow: library/routine → immutable session snapshots → validated set editing →
 completed history → real-only exposure/weekly queries. Other pages use labeled fixtures.
 Goals and demo proposal choices also persist locally.
-SQL does not power V1. A Supabase repository will implement the same interfaces,
-with an explicit local-data migration path and server-only service credentials.
+Local mode uses browser persistence. Account mode uses the normalized Supabase
+repository and reviewed migration path with server-only credentials.
 
 ChartContext exposes points, timeframe, unit, baseline/maturity, confidence,
 calculation version and mock flag. The future coach receives this directly, plus
@@ -153,9 +159,10 @@ are implemented; preview cannot silently create workouts.
 Migration is deterministic and read-only until the first user save; the old key is
 preserved. Unknown origin is isolated from real queries until review. Routine edits
 do not mutate active/history snapshots. Custom exercise renames keep their IDs;
-historical names/muscle groups stay as logged. The future SQL adapter will map
-library IDs via library_key and soft-delete routines to preserve relational links.
-All SQL migrations remain unapplied and require database testing.
+historical names/muscle groups stay as logged. Account Gym's 0006 adapter preserves
+text domain IDs and snapshots independently of dormant foundation Gym tables.
+Current production uses the deployed migrations, including account Gym 0006;
+new deployments require deliberate migration application and database checks.
 
 Browser tests use port 3100 with no server reuse, preventing stale previews from
 passing tests. The development indicator stays visible in the top-right with mobile
@@ -182,7 +189,7 @@ verification builds plans in memory and prints aggregate metadata, never source 
 v2/schemaRevision 2 is a compatible metadata extension with defaults for older stores. No old
 key is deleted or rewritten. JSON formatVersion 1 retains the full validated extended
 store. Future SQL adapters must preserve nullable reps/timing, source order/context,
-fingerprints, mappings and batches; existing SQL migrations are still unapplied.
+fingerprints, mappings and batches; account SQL/codec now preserve these fields.
 
 ## Secure integration server boundary
 
@@ -221,13 +228,14 @@ Explicit development storage implements the same contract in AES-encrypted ignor
 files, atomic replacement and file leases. It is refused outside NODE_ENV=development,
 requires a random development access key, and supports one fixed development owner only.
 Next deployment traces exclude personal imports, environment files and this folder.
-Production uses Supabase. SQL is still unapplied and needs real DB/RLS verification.
+Production uses the existing deployed Supabase schema; verification is recorded in DEPLOYMENT.md.
 
 Browser Gym v2/revision 2 remains unchanged, including Hevy provenance/mappings, active
 workouts and backups. Explicit sync uploads only matching summaries for confirmed history,
-not routines, exercises or sets. Gym persistence is not authenticated/cloud-migrated yet.
-Registry Gym links depend on that browser/origin; stale references after local deletion or
-edits are a documented limitation. No destructive migration runs on load or connection.
+not routines, exercises or sets. Account Gym separately persists full Gym entities
+through verified authentication. Local-only registry links still depend on that
+browser/origin; account IDs are shared across devices. No destructive migration runs
+on load or connection.
 
 Backfill fetches 50 summaries/page, at most five pages per user click with 2.1-second gaps;
 server throttles page requests, persists both general/read API budget pauses and frozen

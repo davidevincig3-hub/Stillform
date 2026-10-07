@@ -4,14 +4,23 @@ import { useState } from 'react';
 import { useGymHistory } from './use-gym-history';
 import { exerciseExposures, effortKnown, formatSet } from '@/analytics/gym';
 import { PageHeading } from './assessment';
+import { gymPerformance } from '@/analytics/gym-performance';
+import { ExercisePerformance } from './exercise-performance';
 export function ExerciseDetail({ id }: { id: string }) {
   const [page, setPage] = useState(0);
-  const { store, ready, total, cloud } = useGymHistory({
-    scope: 'exercise',
-    id,
-    page,
-  });
+  const { store, ready, total, cloud, performance, historyError } =
+    useGymHistory({
+      scope: 'exercise',
+      id,
+      page,
+    });
   const [limit, setLimit] = useState(20);
+  if (historyError)
+    return (
+      <p role="alert">
+        Exercise history unavailable: {historyError}. Reload to retry.
+      </p>
+    );
   if (!ready) return <p>Loading exercise…</p>;
   const exercise = store.exercises.find((e) => e.id === id);
   if (!exercise)
@@ -35,6 +44,18 @@ export function ExerciseDetail({ id }: { id: string }) {
         title={exercise.name}
         subtitle={`${exercise.primaryMuscleGroup ?? 'Unassigned'} · ${exercise.equipment ?? 'Equipment unspecified'} · Real exposure history`}
       />
+      {cloud.cache ? (
+        performance ? (
+          <ExercisePerformance data={performance} />
+        ) : (
+          <p role="status">
+            Account performance summary unavailable. Reload to retry; paged
+            history is not used for conclusions.
+          </p>
+        )
+      ) : (
+        <ExercisePerformance data={gymPerformance(store.history, id)} />
+      )}
       {!exposures.length ? (
         <section className="card">
           <h3>No completed exposures yet</h3>
@@ -55,11 +76,32 @@ export function ExerciseDetail({ id }: { id: string }) {
                 {e.routineName} →
               </Link>
             </div>
-            {e.sets.map((s) => (
-              <p className="detail-set" key={s.id}>
-                {formatSet(s)}
-              </p>
-            ))}
+            {store.history
+              .find((w) => w.id === e.workoutId)
+              ?.exercises.filter((block) => block.exerciseId === id)
+              .map((block, i) => (
+                <div key={block.id}>
+                  <p className="caption">
+                    Block {i + 1} · {block.name} ·{' '}
+                    {block.equipment ?? 'Equipment unknown'} ·{' '}
+                    {block.primaryMuscleGroup ?? 'Unassigned'} ·{' '}
+                    {
+                      store.history.find((w) => w.id === e.workoutId)
+                        ?.provenance.source
+                    }
+                  </p>
+                  {block.sets
+                    .filter((s) => s.completed)
+                    .map((s) => (
+                      <div key={s.id}>
+                        <p className="detail-set">{formatSet(s)}</p>
+                        <span className="caption">
+                          Set type: {s.setType ?? 'normal'}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ))}
             {e.sets.some((s) => !effortKnown(s)) && (
               <p className="caption">
                 Effort missing for some sets. Treat comparisons cautiously.

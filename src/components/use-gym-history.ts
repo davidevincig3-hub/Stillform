@@ -37,7 +37,9 @@ export function useGymHistory(query: GymReadQuery) {
     };
   }, [client, key, owner, revision]);
   const loaded =
-    result?.key === key && result.value.revision === revision
+    result?.key === key &&
+    result.value.owner === owner &&
+    result.value.revision === revision
       ? result.value
       : null;
   return {
@@ -47,5 +49,6 @@ export function useGymHistory(query: GymReadQuery) {
     total: loaded?.summary?.total,
     titles: loaded?.summary?.titles,
     historyError: error,
+    performance: loaded?.summary?.performance,
   };
 }

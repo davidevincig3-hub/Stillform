@@ -4,6 +4,7 @@ import type {
   RecoveryMetric,
 } from '../domain/recovery-engine';
 import { realHistory } from './gym';
+import { comparableFirstSet } from './gym-comparison';
 import { addDays } from '../domain/polar';
 import {
   polarCalendarDate,
@@ -44,25 +45,9 @@ export function withLocalGymEvidence(
   for (const w of real)
     for (const e of w.exercises) {
       // Never select a later best set, estimate 1RM, or compare missing effort.
-      const set = e.sets[0];
-      if (
-        !set?.completed ||
-        set.weight === null ||
-        set.weight <= 0 ||
-        set.reps === null ||
-        set.reps <= 0 ||
-        (!set.failure && set.rir === null && set.rpe === null) ||
-        (set.setType && !['normal', 'failure'].includes(set.setType))
-      )
-        continue;
-      const key = JSON.stringify([
-        e.exerciseId,
-        e.equipment ?? null,
-        set.reps,
-        set.rir,
-        set.rpe,
-        set.failure,
-      ]);
+      const match = comparableFirstSet(e);
+      if (!match) continue;
+      const { set, key } = match;
       const metric = protocols.get(key) ?? {
         id: `gym_load:${key}`,
         name: `${e.name} · fixed reps/effort load`,
@@ -78,7 +63,7 @@ export function withLocalGymEvidence(
           new Date(w.startedAt),
           input.calendarTimeZone ?? DEFAULT_POLAR_TIME_ZONE,
         ),
-        value: set.weight,
+        value: set.weight!,
         complete: true,
         quality: 'limited',
         source: 'confirmed_gym',

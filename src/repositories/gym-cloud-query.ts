@@ -3,6 +3,10 @@ import type { GymStore } from './gym-storage';
 import { recentExercises } from '../analytics/gym-shortlist';
 import { weeklyGymSummary, realHistory } from '../analytics/gym';
 import {
+  gymPerformance,
+  type GymPerformance,
+} from '../analytics/gym-performance';
+import {
   findExerciseHistory,
   findWorkoutHistory,
 } from '../analytics/gym-history';
@@ -25,6 +29,7 @@ export interface GymReadSummary {
   shortlist: ReturnType<typeof recentExercises>;
   exerciseHistory: ReturnType<typeof findExerciseHistory>;
   weekly: ReturnType<typeof weeklyGymSummary>;
+  performance?: GymPerformance;
 }
 export function selectGymView(store: GymStore, input: GymReadQuery = {}) {
   const q = gymReadQuerySchema.parse(input);
@@ -46,6 +51,9 @@ export function selectGymView(store: GymStore, input: GymReadQuery = {}) {
     shortlist: recentExercises(store),
     exerciseHistory: findExerciseHistory(store.exercises, store.history),
     weekly: weeklyGymSummary(store.history),
+    ...(q.scope === 'exercise' && q.id
+      ? { performance: gymPerformance(store.history, q.id) }
+      : {}),
   };
   const selected =
     q.scope === 'all' || q.scope === 'evidence'

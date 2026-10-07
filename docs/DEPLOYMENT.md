@@ -106,7 +106,8 @@ Before any future OAuth authorization, register the exact redirect:
 If Polar supports multiple redirects, add it and preserve
 `http://localhost:3000/api/polar/callback`. If only one redirect is allowed, replace the
 localhost redirect with production; localhost cannot initiate OAuth until restored.
-The developer dashboard change is a user action. Do not disconnect or reauthorize the
+The production callback was manually registered in the Polar dashboard, confirmed
+by the owner on 2026-10-07; the local callback is preserved. Do not disconnect or reauthorize the
 existing account: persisted credentials, refresh token, source IDs, raw payloads and
 checkpoints remain usable from production with the same encryption key.
 
@@ -150,5 +151,5 @@ write rejection, Supabase anonymous RLS denial and server-secret bundle exclusio
 were checked. Localhost development still serves both loopback names; trusted HTTPS
 LAN development remains available. No live workout/recovery history, OAuth connection
 or sync checkpoint was changed during verification. The desktop migration backup's
-checksum remains unchanged. The Polar dashboard callback registration above remains
-a manual prerequisite for future OAuth authorization.
+checksum remains unchanged. The owner subsequently confirmed production Polar
+callback registration on 2026-10-07.

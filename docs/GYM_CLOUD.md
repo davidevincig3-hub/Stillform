@@ -1,5 +1,11 @@
 # Account-bound Gym persistence
 
+Current-owner adoption and private production are complete; verified counts and
+cross-device acceptance are recorded in DEPLOYMENT.md. Bootstrap/deployment steps
+below apply to new accounts or installations, not the existing populated account.
+Exercise performance summaries use full relevant server history before pagination;
+see GYM_PERFORMANCE.md for rules, coverage and limitations.
+
 ## Authority and schema
 
 After explicit account loading/bootstrap, Supabase is durable authority; browser storage

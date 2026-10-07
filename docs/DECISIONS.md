@@ -1,5 +1,21 @@
 # Decision log
 
+## 2026-10-07 — Gym performance V1
+
+Separate descriptive history/records from comparable recorded load. Reuse Recovery's
+first-set eligibility primitive without changing its protocol. Gym performance
+matches canonical ID, specified historical equipment, block occurrence, exact normal/
+failure type, reps, recorded RIR/RPE/failure and superset presence. Never replace an
+ineligible first set with a best set. Three distinct local dates is an explicit
+product rule; confidence is capped at low because technique/rest/machine settings
+are unrecorded. Missing effort remains valid descriptive history. Compute compact
+account summaries before pagination through the existing owner-authenticated query.
+No new schema/write path, AI or training decisions. See GYM_PERFORMANCE.md.
+
+Current-owner cloud adoption and private production are complete; older setup
+milestones describe historical status. The owner confirmed manual production Polar
+callback registration and preservation of localhost on 2026-10-07.
+
 ## 2026-10-06 — Private production surface
 
 Use Vercel's Next.js Node runtime and the existing Supabase project, with no new
