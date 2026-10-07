@@ -1,5 +1,17 @@
 # Decision log
 
+## 2026-10-07 — Resilient logger history
+
+Separate descriptive four-exposure reads from performance analytics and account-wide
+reconstruction. Read normalized owner-filtered rows, bracket with CAS revision and
+retry once rather than return a mixed view. Keep same-owner/ID references during
+refresh/failure; never fall back to a partial workspace/local store. Own active edits
+do not invalidate history; accepted history mutations and external revision changes
+do. Bound automatic retries, expose manual retry and sanitize read diagnostics
+separately from write acknowledgement. Preserve journals, receipts, comparison rules
+and existing schema. The original production backend exception remains uncertain;
+reproduced client defects and live read-only evidence are in GYM_PREVIOUS.md.
+
 ## 2026-10-07 — Gym performance V1
 
 Separate descriptive history/records from comparable recorded load. Reuse Recovery's

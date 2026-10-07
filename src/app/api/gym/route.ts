@@ -8,6 +8,7 @@ import {
 } from '@/server/gym-auth';
 import { gymReadQuerySchema } from '@/repositories/gym-cloud-query';
 import { GymCloudError, SupabaseGymRepository } from '@/server/gym-repository';
+import { gymReadFailure } from '@/server/gym-read-error';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const headers = { 'Cache-Control': 'no-store' };
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
       { headers },
     );
   } catch (error) {
-    return failure(error);
+    return gymReadFailure(error);
   }
 }
 export async function POST(request: Request) {

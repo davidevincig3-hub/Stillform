@@ -9,6 +9,11 @@ is needed. Localhost and trusted HTTPS LAN development remain supported.
 
 ## Account Gym persistence
 
+The workout logger keeps last valid previous references during failed refreshes,
+offers controlled/manual retry, and avoids reloading history after its own set saves.
+History failures are separate from save status. See [descriptive references and
+incident evidence](docs/GYM_PREVIOUS.md).
+
 Exercise detail includes Gym Performance V1: recorded trends/PRs, matched first-set
 load comparisons, exact references, effort coverage and exclusion explanations.
 See [rules and limitations](docs/GYM_PERFORMANCE.md). No progression advice or AI.

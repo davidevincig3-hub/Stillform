@@ -2,23 +2,55 @@
 import { exerciseExposures, effortKnown, formatSet } from '@/analytics/gym';
 import { useGymHistory } from './use-gym-history';
 export function PreviousPerformance({ exerciseId }: { exerciseId: string }) {
-  const { store, ready, historyError } = useGymHistory({
-    scope: 'exercise',
-    id: exerciseId,
-    limit: 4,
-  });
+  const { store, ready, historyError, historyUpdating, retryHistory } =
+    useGymHistory({
+      scope: 'previous',
+      id: exerciseId,
+      limit: 4,
+    });
+  const status = (
+    <>
+      {historyError && (
+        <p className="caption" role="alert">
+          {historyError}{' '}
+          {ready
+            ? 'Showing last available references; not refreshed.'
+            : 'No account history available yet.'}{' '}
+          This concerns history reading; see Account Gym for save status.
+        </p>
+      )}
+      {historyUpdating && (
+        <p className="caption">
+          Updating previous history…{' '}
+          {ready ? 'Showing last available references.' : ''}
+        </p>
+      )}
+      {historyError && (
+        <button type="button" className="secondary" onClick={retryHistory}>
+          Retry previous history
+        </button>
+      )}
+    </>
+  );
   if (!ready)
     return (
-      <p className="previous-empty">
-        {historyError || 'Loading previous performance…'}
-      </p>
+      <div className="previous-empty">
+        {status}
+        {!historyError && 'Loading previous performance…'}
+      </div>
     );
   const exposures = exerciseExposures(store.history, exerciseId);
   if (!exposures.length)
-    return <p className="previous-empty">No previous real exposure yet.</p>;
+    return (
+      <div className="previous-empty">
+        {status}
+        <p>No previous real exposure yet.</p>
+      </div>
+    );
   const first = exposures[0];
   return (
     <div className="previous-performance">
+      {status}
       <p className="eyebrow">
         Previous performance · {new Date(first.date).toLocaleDateString()}
       </p>

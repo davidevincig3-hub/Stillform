@@ -13,11 +13,14 @@ import {
   type GymReadSummary,
 } from '@/repositories/gym-cloud-query';
 import type { IntegrationConfig } from './integration-config';
+import { readPreviousGym } from './gym-previous-read';
 
 export class GymCloudError extends Error {
   constructor(
     message: string,
     readonly status = 503,
+    readonly code:
+      'provider' | 'timeout' | 'network' | 'validation' = 'provider',
   ) {
     super(message);
   }
@@ -44,9 +47,9 @@ export class SupabaseGymRepository {
   ) {}
   private async rpc(name: string, payload: unknown): Promise<unknown> {
     const c = this.config;
-    const response = await this.fetcher(
-      `${c.supabaseUrl}/rest/v1/rpc/${name}`,
-      {
+    let response: Response;
+    try {
+      response = await this.fetcher(`${c.supabaseUrl}/rest/v1/rpc/${name}`, {
         method: 'POST',
         headers: {
           apikey: c.secretKey || c.serviceKey,
@@ -56,17 +59,53 @@ export class SupabaseGymRepository {
         body: JSON.stringify(payload),
         cache: 'no-store',
         signal: AbortSignal.timeout(20000),
-      },
-    );
+      });
+    } catch (error) {
+      throw new GymCloudError(
+        'Account Gym persistence request failed. Draft retained.',
+        503,
+        error instanceof Error &&
+          ['TimeoutError', 'AbortError'].includes(error.name)
+          ? 'timeout'
+          : 'network',
+      );
+    }
     if (!response.ok)
       throw new GymCloudError(
         response.status === 404
           ? 'Account Gym schema is unavailable. Apply migration 0006 before bootstrap.'
           : 'Account Gym persistence failed. Local draft retained.',
       );
-    return response.json();
+    try {
+      return await response.json();
+    } catch (error) {
+      throw new GymCloudError(
+        'Account Gym response could not be validated. Draft retained.',
+        503,
+        error instanceof Error &&
+          ['TimeoutError', 'AbortError'].includes(error.name)
+          ? 'timeout'
+          : error instanceof SyntaxError
+            ? 'validation'
+            : 'network',
+      );
+    }
   }
   async read(owner: string, query?: GymReadQuery): Promise<GymSnapshot> {
+    if (query?.scope === 'previous') {
+      if (!query.id)
+        throw new GymCloudError(
+          'Previous history requires an exercise ID',
+          400,
+        );
+      return readPreviousGym(
+        this.config,
+        this.fetcher,
+        owner,
+        query.id,
+        Math.min(query.limit ?? 4, 4),
+      );
+    }
     const value = z
       .object({
         revision: z.number().int().nonnegative(),

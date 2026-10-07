@@ -5,6 +5,9 @@ cross-device acceptance are recorded in DEPLOYMENT.md. Bootstrap/deployment step
 below apply to new accounts or installations, not the existing populated account.
 Exercise performance summaries use full relevant server history before pagination;
 see GYM_PERFORMANCE.md for rules, coverage and limitations.
+The workout logger uses a separate normalized descriptive exposure read, retaining
+last valid references and avoiding invalidation by its own active-set saves. See
+[previous references](GYM_PREVIOUS.md); other read/write RPC scaling limits remain.
 
 ## Authority and schema
 

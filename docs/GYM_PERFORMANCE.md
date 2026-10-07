@@ -51,6 +51,11 @@ Failure false means no explicit failure recorded, not proven absence of failure.
 
 ## Cloud and local authority
 
+The active logger's descriptive previous references use a separate `previous` query
+without these analytics. Active-set revisions do not invalidate those references;
+accepted history changes do. See [previous references](GYM_PREVIOUS.md). The rules
+and full-history exercise-detail summary below are unchanged.
+
 The same pure function consumes local history or account history. The existing
 owner-authenticated exercise query computes its summary before pagination, returning
 only compact results alongside that history page. No full account clone or extra

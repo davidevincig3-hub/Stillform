@@ -51,6 +51,7 @@ const journalSchema = z.object({
   conflict: z.boolean(),
 });
 export interface CloudState {
+  historyEpoch: number;
   snapshot: AccountGymSnapshot | null;
   cache: Cache | null;
   status:
@@ -63,6 +64,7 @@ export class CloudRequestError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly diagnostic?: { code: string },
   ) {
     super(message);
   }
@@ -95,18 +97,42 @@ async function request(body?: unknown, query?: GymReadQuery) {
       : {}),
     cache: 'no-store',
   });
-  const value = await response.json();
+  let value;
+  try {
+    value = await response.json();
+  } catch {
+    throw new CloudRequestError(
+      body
+        ? 'Account Gym save response could not be read. Draft retained.'
+        : 'Gym history response could not be read.',
+      response.ok ? 502 : response.status,
+    );
+  }
   if (!response.ok)
     throw new CloudRequestError(
-      typeof value.error === 'string'
+      typeof value?.error === 'string'
         ? value.error
         : 'Account Gym request failed',
       response.status,
+      z
+        .object({
+          code: z.enum([
+            'authentication',
+            'timeout',
+            'network',
+            'provider',
+            'validation',
+            'processing',
+            'revision_changed',
+          ]),
+        })
+        .safeParse(value?.diagnostic).data,
     );
   return value;
 }
 export class GymCloudClient {
   state: CloudState = {
+    historyEpoch: 0,
     snapshot: null,
     cache: null,
     status: 'local',
@@ -123,6 +149,7 @@ export class GymCloudClient {
   private stamp: string | null = null;
   private working = gymChanges(this.base, this.base);
   private journal: GymJournal;
+  private previousReads = new Map<string, Promise<AccountGymSnapshot>>();
   constructor(
     private transport: GymCloudTransport,
     private storage: Pick<Storage, 'getItem' | 'setItem'>,
@@ -259,13 +286,20 @@ export class GymCloudClient {
       if (cache && cache.owner !== remote.owner) {
         this.verified = false;
         this.accountMismatch = true;
+        this.previousReads.clear();
         throw Error(
           'Signed-in account differs from the cached draft. Sign in to the original account; draft preserved.',
         );
       }
       this.verified = true;
       this.accountMismatch = false;
-      this.publish({ snapshot: remote, error: '' });
+      this.publish({
+        snapshot: remote,
+        error: '',
+        historyEpoch:
+          this.state.historyEpoch +
+          (cache && remote.revision > cache.revision ? 1 : 0),
+      });
       if (!remote.initialized && !cache?.pending) {
         this.publish({ status: 'empty' });
         return;
@@ -411,6 +445,13 @@ export class GymCloudClient {
       }
       this.publish({
         cache: next,
+        historyEpoch:
+          this.state.historyEpoch +
+          (operation.bootstrap ||
+          operation.store ||
+          operation.changes?.arrays.history
+            ? 1
+            : 0),
         status: changed ? 'pending' : 'synced',
         error: '',
         snapshot: {
@@ -442,9 +483,40 @@ export class GymCloudClient {
     else await this.connect(); // discard full bootstrap memory and refresh server summaries/recent window
   }
   async read(query: GymReadQuery) {
+    if (this.accountMismatch)
+      throw new CloudRequestError(
+        'History account requires verification.',
+        403,
+      );
+    if (query.scope === 'previous') {
+      const owner = this.state.cache?.owner ?? this.state.snapshot?.owner;
+      const key = JSON.stringify([owner, this.state.historyEpoch, query]);
+      const prior = this.previousReads.get(key);
+      if (prior) return prior;
+      const pending = this.readVerified(query, owner).catch((error) => {
+        this.previousReads.delete(key);
+        throw error;
+      });
+      if (this.previousReads.size >= 100) this.previousReads.clear();
+      this.previousReads.set(key, pending);
+      return pending;
+    }
+    return this.readVerified(
+      query,
+      this.state.cache?.owner ?? this.state.snapshot?.owner,
+    );
+  }
+  private async readVerified(query: GymReadQuery, owner: string | undefined) {
     const value = snapshotSchema.parse(await this.transport.read(query));
-    if (value.owner !== this.state.cache?.owner)
-      throw Error('Account mismatch');
+    if (
+      !owner ||
+      value.owner !== owner ||
+      owner !== (this.state.cache?.owner ?? this.state.snapshot?.owner)
+    )
+      throw new CloudRequestError(
+        'History account changed. Sign in to the original account.',
+        403,
+      );
     return value;
   }
   async useCloudAfterConflict() {
@@ -469,6 +541,12 @@ export class GymCloudClient {
     };
     await this.persist(cache);
     this.verified = true;
-    this.publish({ cache, snapshot: remote, status: 'synced', error: '' });
+    this.publish({
+      cache,
+      snapshot: remote,
+      status: 'synced',
+      error: '',
+      historyEpoch: this.state.historyEpoch + 1,
+    });
   }
 }

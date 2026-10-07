@@ -12,7 +12,15 @@ import {
 } from '../analytics/gym-history';
 export const gymReadQuerySchema = z.object({
   scope: z
-    .enum(['workspace', 'history', 'exercise', 'workout', 'all', 'evidence'])
+    .enum([
+      'workspace',
+      'history',
+      'exercise',
+      'previous',
+      'workout',
+      'all',
+      'evidence',
+    ])
     .default('workspace'),
   page: z.coerce.number().int().min(0).max(100000).default(0),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -31,9 +39,37 @@ export interface GymReadSummary {
   weekly: ReturnType<typeof weeklyGymSummary>;
   performance?: GymPerformance;
 }
+export function selectGymView<Q extends GymReadQuery = { scope: 'workspace' }>(
+  store: GymStore,
+  input?: Q,
+): { store: GymStore } & ('previous' extends Q['scope']
+  ? { summary?: GymReadSummary }
+  : { summary: GymReadSummary });
 export function selectGymView(store: GymStore, input: GymReadQuery = {}) {
   const q = gymReadQuerySchema.parse(input);
   let history = realHistory(store.history);
+  if (q.scope === 'previous') {
+    if (!q.id) throw new Error('Previous exposure requires an exercise ID');
+    history = history
+      .map((w) => ({
+        ...w,
+        exercises: w.exercises.filter((e) => e.exerciseId === q.id),
+      }))
+      .filter((w) => w.exercises.some((e) => e.sets.some((s) => s.completed)));
+    return {
+      store: {
+        ...store,
+        exercises: [],
+        routines: [],
+        history: history.slice(0, Math.min(q.limit, 4)),
+        active: null,
+        legacyArchive: [],
+        hevyMappings: {},
+        importBatches: [],
+        exercisePreferences: {},
+      },
+    };
+  }
   if (q.scope === 'history')
     history = findWorkoutHistory(history, q.query, q.title, q.from, q.to);
   if (q.scope === 'exercise')

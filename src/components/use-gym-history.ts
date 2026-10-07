@@ -2,7 +2,11 @@
 import { useEffect, useState } from 'react';
 import { useWorkout } from './workout-provider';
 import type { GymReadQuery } from '@/repositories/gym-cloud-query';
-import type { AccountGymSnapshot } from '@/repositories/gym-cloud-client';
+import {
+  CloudRequestError,
+  type AccountGymSnapshot,
+} from '@/repositories/gym-cloud-client';
+import { initialGymStore } from '@/repositories/gym-storage';
 // Historical pages are request-local memory; changing the page replaces the window.
 export function useGymHistory(query: GymReadQuery) {
   const context = useWorkout();
@@ -10,45 +14,94 @@ export function useGymHistory(query: GymReadQuery) {
     key: string;
     value: AccountGymSnapshot;
   } | null>(null);
-  const [error, setError] = useState('');
+  const [requestState, setRequestState] = useState<{
+    identity: string;
+    error: string;
+    stamp: string;
+  } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const key = JSON.stringify(query);
+  const previousQuery = query.scope === 'previous';
   const client = context.cloudClient;
-  const owner = context.cloud.cache?.owner;
-  const revision = context.cloud.cache?.revision;
+  const owner =
+    context.cloud.cache?.owner ??
+    (previousQuery ? context.cloud.snapshot?.owner : undefined);
+  const revision = previousQuery
+    ? context.cloud.historyEpoch
+    : context.cloud.cache?.revision;
+  const identity = JSON.stringify([owner, key]);
+  const stamp = `${revision ?? 0}:${retryCount}`;
   useEffect(() => {
     if (!owner) return;
     let cancelled = false;
-    client
-      .read(JSON.parse(key))
-      .then((value) => {
-        if (!cancelled) {
-          setResult({ key, value });
-          setError('');
-        }
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setError(
-            e instanceof Error ? e.message : 'History could not be loaded',
-          );
-      });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = (attempt: number) => {
+      client
+        .read(JSON.parse(key))
+        .then((value) => {
+          if (!cancelled) {
+            setResult({ key, value });
+            setRequestState({ identity, error: '', stamp });
+          }
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          const status = e instanceof CloudRequestError ? e.status : 0;
+          const retryable =
+            !status || status === 408 || status === 429 || status >= 500;
+          setRequestState({
+            identity,
+            error: !previousQuery
+              ? e instanceof Error
+                ? e.message
+                : 'History could not be loaded'
+              : status === 401 || status === 403
+                ? 'History access requires account verification.'
+                : `Previous history could not be refreshed${e instanceof CloudRequestError && e.diagnostic ? ` (${e.diagnostic.code}, HTTP ${status})` : ''}.`,
+            stamp,
+          });
+          if (previousQuery && attempt === 0 && retryable)
+            timer = setTimeout(() => load(1), 1500);
+        });
+    };
+    load(0);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
-  }, [client, key, owner, revision]);
+  }, [
+    client,
+    key,
+    owner,
+    revision,
+    identity,
+    stamp,
+    retryCount,
+    previousQuery,
+  ]);
   const loaded =
     result?.key === key &&
     result.value.owner === owner &&
-    result.value.revision === revision
+    (previousQuery || result.value.revision === revision)
       ? result.value
       : null;
   return {
     ...context,
-    store: loaded?.store ?? context.store,
+    store:
+      loaded?.store ??
+      (previousQuery && owner
+        ? { ...initialGymStore(), exercises: [], history: [] }
+        : context.store),
     ready: context.ready && (!owner || !!loaded),
     total: loaded?.summary?.total,
     titles: loaded?.summary?.titles,
-    historyError: error,
+    historyError: requestState?.identity === identity ? requestState.error : '',
+    historyUpdating:
+      !!owner &&
+      (!requestState ||
+        requestState.identity !== identity ||
+        requestState.stamp !== stamp),
+    retryHistory: () => setRetryCount((value) => value + 1),
     performance: loaded?.summary?.performance,
   };
 }
