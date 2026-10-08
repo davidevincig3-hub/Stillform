@@ -5,6 +5,13 @@ muscle-group/exercise drilldown and fixed-cohort gaps. Recorded history, logger
 references and conservative comparisons are preserved. See [method and limitations](docs/GYM_TREND.md);
 it is not a physiological, hypertrophy or measured maximal-strength score.
 
+## Preview
+
+### Home
+![Stillform Home](docs/Home.jpg)
+
+### Gym Analytics
+![Stillform Gym Analytics](docs/Gym_analytics.jpg)
 ## Private daily-use deployment
 
 Production setup and the stable HTTPS origin are documented in
